@@ -1,0 +1,11 @@
+{
+  "n_queries": 999,
+  "astar_total_s": 17.48942930001067,
+  "gnn_total_s": 0.12628510000067764,
+  "gnn_total_std_s": 0.06324856115886786,
+  "astar_per_query_ms": 17.50693623624692,
+  "gnn_per_query_ms": 0.12641151151218982,
+  "gnn_per_query_std_ms": 0.06331187303189977,
+  "throughput_ratio": 138.49162965319601,
+  "n_repeats": 5
+}

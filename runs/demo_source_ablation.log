@@ -1,0 +1,118 @@
+Cells: 25  unreachable (excluded from rates): [(2024, 'seed518677876_s1')]
+Training 50 remaining (cell, arm) runs
+  [  1/50] classical_only seed=42 Node_537->Node_54
+          cost=550 strict=True  (179s)
+  [  2/50] classical_only seed=42 Node_476->Node_449
+          cost=116 strict=True  (177s)
+  [  3/50] classical_only seed=42 Node_81->Node_525
+          cost=267 strict=True  (173s)
+  [  4/50] classical_only seed=42 Node_274->Node_101
+          cost=23 strict=True  (172s)
+  [  5/50] classical_only seed=42 Node_427->Node_398
+          cost=1208 strict=True  (175s)
+  [  6/50] classical_only seed=1337 Node_576->Node_245
+          cost=549 strict=True  (175s)
+  [  7/50] classical_only seed=1337 Node_562->Node_150
+          cost=44 strict=True  (180s)
+  [  8/50] classical_only seed=1337 Node_41->Node_451
+          cost=88 strict=True  (178s)
+  [  9/50] classical_only seed=1337 Node_482->Node_250
+          cost=324 strict=True  (178s)
+  [ 10/50] classical_only seed=1337 Node_177->Node_599
+          cost=71 strict=True  (175s)
+  [ 11/50] classical_only seed=2024 Node_423->Node_58
+          cost=54 strict=True  (178s)
+  [ 12/50] classical_only seed=2024 Node_623->Node_50
+          cost=inf strict=False  (185s)
+  [ 13/50] classical_only seed=2024 Node_50->Node_104
+          cost=1526 strict=True  (181s)
+  [ 14/50] classical_only seed=2024 Node_174->Node_451
+          cost=27 strict=True  (176s)
+  [ 15/50] classical_only seed=2024 Node_562->Node_123
+          cost=86 strict=True  (168s)
+  [ 16/50] classical_only seed=7 Node_160->Node_620
+          cost=408 strict=True  (167s)
+  [ 17/50] classical_only seed=7 Node_155->Node_621
+          cost=114 strict=True  (168s)
+  [ 18/50] classical_only seed=7 Node_121->Node_606
+          cost=215 strict=True  (171s)
+  [ 19/50] classical_only seed=7 Node_168->Node_604
+          cost=57 strict=True  (169s)
+  [ 20/50] classical_only seed=7 Node_551->Node_117
+          cost=123 strict=True  (169s)
+  [ 21/50] classical_only seed=314159 Node_77->Node_494
+          cost=195 strict=True  (167s)
+  [ 22/50] classical_only seed=314159 Node_326->Node_625
+          cost=86 strict=True  (166s)
+  [ 23/50] classical_only seed=314159 Node_205->Node_549
+          cost=52 strict=True  (252s)
+  [ 24/50] classical_only seed=314159 Node_399->Node_401
+          cost=181 strict=True  (266s)
+  [ 25/50] classical_only seed=314159 Node_551->Node_623
+          cost=110 strict=True  (267s)
+  [ 26/50] quantum_only   seed=42 Node_537->Node_54
+          cost=328 strict=True  (1751s)
+  [ 27/50] quantum_only   seed=42 Node_476->Node_449
+          cost=1637 strict=True  (1902s)
+  [ 28/50] quantum_only   seed=42 Node_81->Node_525
+          cost=394 strict=True  (1139s)
+  [ 29/50] quantum_only   seed=42 Node_274->Node_101
+          cost=23 strict=True  (776s)
+  [ 30/50] quantum_only   seed=42 Node_427->Node_398
+          cost=221 strict=True  (1193s)
+  [ 31/50] quantum_only   seed=1337 Node_576->Node_245
+          cost=401 strict=True  (868s)
+  [ 32/50] quantum_only   seed=1337 Node_562->Node_150
+          cost=44 strict=True  (1248s)
+  [ 33/50] quantum_only   seed=1337 Node_41->Node_451
+          cost=225 strict=True  (1007s)
+  [ 34/50] quantum_only   seed=1337 Node_482->Node_250
+          cost=74 strict=True  (864s)
+  [ 35/50] quantum_only   seed=1337 Node_177->Node_599
+          cost=71 strict=True  (1119s)
+  [ 36/50] quantum_only   seed=2024 Node_423->Node_58
+          cost=77 strict=True  (1092s)
+  [ 37/50] quantum_only   seed=2024 Node_623->Node_50
+          cost=inf strict=False  (354s)
+  [ 38/50] quantum_only   seed=2024 Node_50->Node_104
+          cost=2046 strict=True  (651s)
+  [ 39/50] quantum_only   seed=2024 Node_174->Node_451
+          cost=27 strict=True  (403s)
+  [ 40/50] quantum_only   seed=2024 Node_562->Node_123
+          cost=86 strict=True  (714s)
+  [ 41/50] quantum_only   seed=7 Node_160->Node_620
+          cost=515 strict=True  (1259s)
+  [ 42/50] quantum_only   seed=7 Node_155->Node_621
+          cost=114 strict=True  (1325s)
+  [ 43/50] quantum_only   seed=7 Node_121->Node_606
+          cost=471 strict=True  (1245s)
+  [ 44/50] quantum_only   seed=7 Node_168->Node_604
+          cost=57 strict=True  (1036s)
+  [ 45/50] quantum_only   seed=7 Node_551->Node_117
+          cost=175 strict=True  (880s)
+  [ 46/50] quantum_only   seed=314159 Node_77->Node_494
+          cost=149 strict=True  (652s)
+  [ 47/50] quantum_only   seed=314159 Node_326->Node_625
+          cost=602 strict=True  (1201s)
+  [ 48/50] quantum_only   seed=314159 Node_205->Node_549
+          cost=52 strict=True  (869s)
+  [ 49/50] quantum_only   seed=314159 Node_399->Node_401
+          cost=55 strict=True  (915s)
+  [ 50/50] quantum_only   seed=314159 Node_551->Node_623
+          cost=317 strict=True  (1143s)
+  [full diversity] recomputing seed=42 seed191664964_s0
+  [full diversity] recomputing seed=42 seed191664964_s1
+  [full diversity] recomputing seed=42 seed191664964_s2
+  [full diversity] recomputing seed=42 seed191664964_s3
+  [full diversity] recomputing seed=42 seed191664964_s4
+  [full diversity] recomputing seed=1337 seed1173222464_s0
+  [full diversity] recomputing seed=1337 seed1173222464_s1
+  [full diversity] recomputing seed=1337 seed1173222464_s2
+  [full diversity] recomputing seed=1337 seed1173222464_s3
+  [full diversity] recomputing seed=1337 seed1173222464_s4
+  [full diversity] recomputing seed=2024 seed518677876_s0
+  [full diversity] recomputing seed=2024 seed518677876_s1
+  [full diversity] recomputing seed=2024 seed518677876_s2
+
+Sanity check: 14/25 warm cells differ >1% from published (untraced-rerun baseline: 5); report: runs\demo_source_ablation_sanity.json
+ABORTING join: differences exceed the documented reproduction baseline — review the sanity report (use --force-join to override).

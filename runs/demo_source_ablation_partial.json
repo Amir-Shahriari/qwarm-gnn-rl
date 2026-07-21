@@ -1,0 +1,258 @@
+[
+  {
+    "arm": "classical_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s0",
+    "source": "Node_537",
+    "destination": "Node_54",
+    "euclidean_distance": 20.615528128088304,
+    "cost": 549.5174089364684,
+    "strict": true,
+    "reasonable": false,
+    "cost_ratio": 9.4160298359573,
+    "dijkstra_cost": 58.35977779488425,
+    "infer_ms": 7.656600006157532,
+    "train_s": 156.2479699999967,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 34,
+      "mean_pairwise_jaccard_distance": 0.7656000194101796,
+      "n_unique_state_actions": 102,
+      "n_transitions": 207,
+      "paths_by_source": {
+        "KShortestPaths": 34
+      },
+      "n_qaoa_paths": 0,
+      "n_quantum_paths": 0,
+      "n_classical_paths": 34
+    }
+  },
+  {
+    "arm": "classical_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s1",
+    "source": "Node_476",
+    "destination": "Node_449",
+    "euclidean_distance": 23.08679276123039,
+    "cost": 116.00591566410156,
+    "strict": true,
+    "reasonable": true,
+    "cost_ratio": 1.9685133801697312,
+    "dijkstra_cost": 58.930722459249516,
+    "infer_ms": 3.1248999875970185,
+    "train_s": 153.59696009999607,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 38,
+      "mean_pairwise_jaccard_distance": 0.779795533080934,
+      "n_unique_state_actions": 125,
+      "n_transitions": 257,
+      "paths_by_source": {
+        "KShortestPaths": 38
+      },
+      "n_qaoa_paths": 0,
+      "n_quantum_paths": 0,
+      "n_classical_paths": 38
+    }
+  },
+  {
+    "arm": "classical_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s2",
+    "source": "Node_81",
+    "destination": "Node_525",
+    "euclidean_distance": 25.495097567963924,
+    "cost": 267.0742659649152,
+    "strict": true,
+    "reasonable": false,
+    "cost_ratio": 3.863273948308202,
+    "dijkstra_cost": 69.13158878672631,
+    "infer_ms": 5.73229999281466,
+    "train_s": 150.24000580000575,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 32,
+      "mean_pairwise_jaccard_distance": 0.797363606273507,
+      "n_unique_state_actions": 126,
+      "n_transitions": 219,
+      "paths_by_source": {
+        "KShortestPaths": 32
+      },
+      "n_qaoa_paths": 0,
+      "n_quantum_paths": 0,
+      "n_classical_paths": 32
+    }
+  },
+  {
+    "arm": "classical_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s3",
+    "source": "Node_274",
+    "destination": "Node_101",
+    "euclidean_distance": 23.769728648009426,
+    "cost": 22.803324230263954,
+    "strict": true,
+    "reasonable": true,
+    "cost_ratio": 1.0,
+    "dijkstra_cost": 22.803324230263954,
+    "infer_ms": 1.4528000028803945,
+    "train_s": 149.04186070000287,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 32,
+      "mean_pairwise_jaccard_distance": 0.7627779042523473,
+      "n_unique_state_actions": 105,
+      "n_transitions": 189,
+      "paths_by_source": {
+        "KShortestPaths": 32
+      },
+      "n_qaoa_paths": 0,
+      "n_quantum_paths": 0,
+      "n_classical_paths": 32
+    }
+  },
+  {
+    "arm": "classical_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s4",
+    "source": "Node_427",
+    "destination": "Node_398",
+    "euclidean_distance": 21.095023109728988,
+    "cost": 1208.1461856532187,
+    "strict": true,
+    "reasonable": false,
+    "cost_ratio": 20.401822237001365,
+    "dijkstra_cost": 59.217562608799135,
+    "infer_ms": 12.370199983706698,
+    "train_s": 152.12380840000696,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 42,
+      "mean_pairwise_jaccard_distance": 0.7905215893661274,
+      "n_unique_state_actions": 143,
+      "n_transitions": 285,
+      "paths_by_source": {
+        "KShortestPaths": 42
+      },
+      "n_qaoa_paths": 0,
+      "n_quantum_paths": 0,
+      "n_classical_paths": 42
+    }
+  },
+  {
+    "arm": "quantum_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s0",
+    "source": "Node_537",
+    "destination": "Node_54",
+    "euclidean_distance": 20.615528128088304,
+    "cost": 357.7418103814005,
+    "strict": true,
+    "reasonable": false,
+    "cost_ratio": 6.129937842442569,
+    "dijkstra_cost": 58.35977779488425,
+    "infer_ms": 4.931100003886968,
+    "train_s": 1420.5602288999944,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 5,
+      "mean_pairwise_jaccard_distance": 0.7416239316239316,
+      "n_unique_state_actions": 23,
+      "n_transitions": 30,
+      "paths_by_source": {
+        "faithful_qaoa": 2,
+        "quantum_inspired_stochastic": 3
+      },
+      "n_qaoa_paths": 2,
+      "n_quantum_paths": 5,
+      "n_classical_paths": 0
+    }
+  },
+  {
+    "arm": "quantum_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s2",
+    "source": "Node_81",
+    "destination": "Node_525",
+    "euclidean_distance": 25.495097567963924,
+    "cost": 638.8035372099716,
+    "strict": true,
+    "reasonable": false,
+    "cost_ratio": 9.240400060538256,
+    "dijkstra_cost": 69.13158878672631,
+    "infer_ms": 8.76379999681376,
+    "train_s": 1079.67154879999,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 4,
+      "mean_pairwise_jaccard_distance": 0.7776418026418027,
+      "n_unique_state_actions": 21,
+      "n_transitions": 24,
+      "paths_by_source": {
+        "faithful_qaoa": 1,
+        "quantum_inspired_stochastic": 3
+      },
+      "n_qaoa_paths": 1,
+      "n_quantum_paths": 4,
+      "n_classical_paths": 0
+    }
+  },
+  {
+    "arm": "quantum_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s3",
+    "source": "Node_274",
+    "destination": "Node_101",
+    "euclidean_distance": 23.769728648009426,
+    "cost": 22.803324230263954,
+    "strict": true,
+    "reasonable": true,
+    "cost_ratio": 1.0,
+    "dijkstra_cost": 22.803324230263954,
+    "infer_ms": 1.5285999979823828,
+    "train_s": 874.9108218999754,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 3,
+      "mean_pairwise_jaccard_distance": 0.7751322751322752,
+      "n_unique_state_actions": 14,
+      "n_transitions": 14,
+      "paths_by_source": {
+        "quantum_inspired_stochastic": 2,
+        "faithful_qaoa": 1
+      },
+      "n_qaoa_paths": 1,
+      "n_quantum_paths": 3,
+      "n_classical_paths": 0
+    }
+  },
+  {
+    "arm": "quantum_only",
+    "seed": 42,
+    "scenario_id": "seed191664964_s4",
+    "source": "Node_427",
+    "destination": "Node_398",
+    "euclidean_distance": 21.095023109728988,
+    "cost": 678.899699299295,
+    "strict": true,
+    "reasonable": false,
+    "cost_ratio": 11.464499202444669,
+    "dijkstra_cost": 59.217562608799135,
+    "infer_ms": 8.653800003230572,
+    "train_s": 1348.6879524000105,
+    "k_threshold": 3.0,
+    "diversity": {
+      "n_unique_paths": 9,
+      "mean_pairwise_jaccard_distance": 0.7848848682182017,
+      "n_unique_state_actions": 41,
+      "n_transitions": 54,
+      "paths_by_source": {
+        "faithful_qaoa": 4,
+        "quantum_inspired_stochastic": 5
+      },
+      "n_qaoa_paths": 4,
+      "n_quantum_paths": 9,
+      "n_classical_paths": 0
+    }
+  }
+]

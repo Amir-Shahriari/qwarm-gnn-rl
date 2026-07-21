@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GNN-DQN Warm-Start Pathfinding — ICDM 2026</title>
+<style>
+  /* ═══════════════════════════════════════════════════════════════
+     DESIGN TOKENS
+     All fonts are locally-resolved stacks — this demo must run with
+     all outbound network blocked (see tests/test_offline.py), so no
+     webfont is ever fetched.
+     ═══════════════════════════════════════════════════════════════ */
+  :root {
+    /* surfaces */
+    --bg:         #0a0e14;
+    --surface:    #111823;
+    --surface-2:  #17202c;
+    --surface-3:  #1e2937;
+    --line:       #24303f;
+    --line-soft:  #1a2230;
+
+    /* type */
+    --text:       #e9eff7;
+    --text-dim:   #94a5ba;
+    --text-faint: #61748c;
+
+    /* one accent */
+    --accent:     #4c8dff;
+    --accent-dim: rgba(76,141,255,.14);
+
+    /* semantic status */
+    --ok:         #34d399;
+    --fail:       #f87171;
+    --warn:       #fbbf24;
+
+    /* agent identity */
+    --warm:       #34d399;
+    --cold:       #fb923c;
+    --dijk:       #60a5fa;
+
+    /* graph palette */
+    --n-start:    #22d3ee;
+    --n-goal:     #e879f9;
+    --n-active:   #5b6d86;
+    --n-off:      #29344a;
+    --edge:       #1e2a3b;
+
+    --font-sans: "Inter", "Inter var", ui-sans-serif, system-ui,
+                 "Segoe UI Variable Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Cascadia Mono",
+                 Menlo, Consolas, "Liberation Mono", monospace;
+
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+
+    --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;
+    --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+
+    --shell: 1560px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Several togglable elements below carry `display:flex` from a class rule,
+     which would otherwise out-specify the UA's `[hidden] { display:none }`. */
+  [hidden] { display: none !important; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(76,141,255,.07), transparent 70%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv02","cv03","cv04","tnum";
+  }
+
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  /* ═══════════════════════ HEADER ═══════════════════════ */
+  .app-header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,14,20,.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .app-header-inner {
+    max-width: var(--shell);
+    margin: 0 auto;
+    padding: 12px var(--sp-5);
+    display: flex; align-items: center; gap: var(--sp-4);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+  .brand h1 {
+    font-size: 16px; font-weight: 650; letter-spacing: -.01em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .brand .venue {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(76,141,255,.28);
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .nav { margin-left: auto; display: flex; gap: var(--sp-1); }
+  .nav-btn {
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-dim); font-family: inherit; font-size: 13px; font-weight: 550;
+    padding: 7px 16px; border-radius: 999px; cursor: pointer;
+    transition: color .15s, background .15s, border-color .15s;
+  }
+  .nav-btn:hover { color: var(--text); background: var(--surface-2); }
+  .nav-btn.active {
+    color: var(--text); background: var(--surface-3);
+    border-color: var(--line); box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+
+  /* ═══════════════════════ SHELL ═══════════════════════ */
+  main { max-width: var(--shell); margin: 0 auto; padding: var(--sp-5); }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .stack > * + * { margin-top: var(--sp-4); }
+
+  /* ═══════════════════════ TOOLBAR ═══════════════════════
+     Full-width and decoupled from the canvas grid: a 2-column grid
+     whose left cell is minmax(0,1fr). Controls shrink inside that
+     cell instead of pushing the playback cluster around, so showing
+     or hiding the Oracle control (25×25-only) can never reflow the
+     rest of the bar. Identical geometry at every scale.
+     ═══════════════════════════════════════════════════════ */
+  .toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--sp-3) var(--sp-5);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: var(--sp-4) var(--sp-4);
+  }
+  .tb-cluster { display: flex; align-items: flex-end; gap: var(--sp-3); min-width: 0; }
+  .tb-cluster.selection { flex: 1 1 auto; }
+  .tb-cluster.playback  { flex: 0 0 auto; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field.grow { flex: 1 1 0; }
+  .field > label {
+    font-size: 10px; font-weight: 650; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-faint); white-space: nowrap;
+  }
+  .field-row { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+  .field-row > select { flex: 1 1 0; min-width: 0; }
+  .field-row > .seg,
+  .field-row > .btn { flex: none; }
+
+  select {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: inherit; font-size: 13px;
+    border-radius: var(--r-sm);
+    padding: 7px 10px;
+    cursor: pointer;
+    min-width: 0; width: 100%;
+    transition: border-color .15s, background .15s;
+  }
+  select:hover { border-color: #34445a; }
+  select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  select option { background: var(--surface-2); color: var(--text); }
+
+  .btn {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: inherit; font-size: 13px; font-weight: 550;
+    border-radius: var(--r-sm);
+    padding: 7px 15px;
+    cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s, transform .08s;
+  }
+  .btn:hover:not(:disabled) { background: var(--surface-3); border-color: #34445a; }
+  .btn:active:not(:disabled) { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.primary {
+    background: var(--accent); border-color: transparent; color: #fff;
+    box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 4px 14px rgba(76,141,255,.22);
+  }
+  .btn.primary:hover:not(:disabled) { background: #3d7ff5; border-color: transparent; }
+  .btn.ghost { background: transparent; color: var(--text-dim); }
+  .btn.ghost:hover:not(:disabled) { color: var(--text); background: var(--surface-2); }
+
+  .seg { display: inline-flex; background: var(--surface-3); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 2px; }
+  .seg-btn {
+    background: transparent; border: 0; color: var(--text-faint);
+    font-family: inherit; font-size: 12px; font-weight: 600;
+    padding: 5px 11px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+    transition: color .15s, background .15s;
+  }
+  .seg-btn:hover { color: var(--text); }
+  .seg-btn.active { background: var(--accent); color: #fff; }
+  .seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .tb-sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 2px; }
+  .tb-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+
+  /* toolbar responsive: clusters wrap as whole units, never mid-cluster */
+  @media (max-width: 1180px) {
+    .toolbar { grid-template-columns: minmax(0, 1fr); }
+    .tb-cluster.playback { flex-wrap: wrap; }
+  }
+  @media (max-width: 720px) {
+    .tb-cluster.selection { flex-wrap: wrap; }
+    .field.grow { flex-basis: 100%; }
+  }
+
+  /* ═══════════════════════ METRIC STRIP ═══════════════════════ */
+  .metric-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sp-3);
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 14px 18px;
+    display: flex; flex-direction: column; gap: 2px;
+    min-width: 0;
+    position: relative; overflow: hidden;
+  }
+  .stat::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--stat-accent, var(--line)); opacity: .9;
+  }
+  .stat-k {
+    font-size: 10px; font-weight: 650; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-faint);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .stat-v {
+    font-family: var(--font-mono);
+    font-size: clamp(22px, 2.1vw, 30px);
+    font-weight: 600; line-height: 1.15; letter-spacing: -.02em;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-v.ok   { color: var(--ok); }
+  .stat-v.bad  { color: var(--fail); }
+  .stat-v.info { color: var(--dijk); }
+  .stat-v.idle { color: var(--text-faint); }
+  .stat-sub { font-size: 12px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  @media (max-width: 1100px) { .metric-strip { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  @media (max-width: 560px)  { .metric-strip { grid-template-columns: minmax(0,1fr); } }
+
+  /* ═══════════════════════ LEGEND ═══════════════════════ */
+  .legend {
+    display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 10px var(--sp-4);
+    font-size: 12px; color: var(--text-dim);
+  }
+  .legend-title {
+    font-size: 10px; font-weight: 650; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-faint);
+  }
+  .lg { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .lg i { display: inline-block; flex: none; }
+  .lg i.line  { width: 20px; height: 3px; border-radius: 2px; background: var(--c); }
+  .lg i.dash  { width: 20px; height: 0; border-top: 3px dashed var(--c); }
+  .lg i.dot   { width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
+  .lg i.diam  { width: 11px; height: 11px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
+  /* the "deactivated" swatch is deliberately dark on canvas; ring it so the
+     legend entry itself stays readable */
+  .lg i.node  { width: 9px; height: 9px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px rgba(255,255,255,.22); }
+
+  /* ═══════════════════════ PANELS ═══════════════════════ */
+  .panels {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--sp-3);
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    min-width: 0;
+    display: flex; flex-direction: column;
+    transition: border-color .25s, box-shadow .25s, transform .25s;
+  }
+  .panel.is-winner {
+    border-color: rgba(52,211,153,.55);
+    box-shadow: 0 0 0 1px rgba(52,211,153,.28), 0 10px 34px -12px rgba(52,211,153,.42);
+  }
+  .panel-head {
+    display: flex; align-items: center; gap: var(--sp-2);
+    padding: 11px var(--sp-4);
+    border-bottom: 1px solid var(--line-soft);
+    background: linear-gradient(180deg, rgba(255,255,255,.022), transparent);
+    min-height: 46px;
+  }
+  .panel-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dot); flex: none; box-shadow: 0 0 10px var(--dot); }
+  .panel-head h3 {
+    font-size: 13px; font-weight: 600; letter-spacing: -.005em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+  }
+  .panel-head .badge { margin-left: auto; }
+
+  .badge {
+    font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none;
+    border: 1px solid transparent;
+  }
+  .badge.reached    { background: rgba(52,211,153,.14); color: var(--ok);   border-color: rgba(52,211,153,.35); }
+  .badge.failed     { background: rgba(248,113,113,.14); color: var(--fail); border-color: rgba(248,113,113,.35); }
+  .badge.optimal    { background: rgba(96,165,250,.14); color: var(--dijk); border-color: rgba(96,165,250,.35); }
+  .badge.unsolvable { background: rgba(148,165,186,.14); color: var(--text-dim); border-color: rgba(148,165,186,.3); }
+  .badge.idle       { background: var(--surface-3); color: var(--text-faint); border-color: var(--line); }
+
+  .winner-flag {
+    font-size: 9px; font-weight: 750; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ok); background: rgba(52,211,153,.12);
+    border: 1px solid rgba(52,211,153,.35);
+    padding: 2px 7px; border-radius: 999px; white-space: nowrap; flex: none;
+  }
+
+  .canvas-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #0c1119; }
+  .canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .panel-foot {
+    border-top: 1px solid var(--line-soft);
+    padding: 10px var(--sp-4);
+    display: flex; flex-wrap: wrap; gap: 4px var(--sp-3);
+    font-size: 12px; min-height: 40px; align-items: center;
+  }
+  .kv { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+  .kv .k { color: var(--text-faint); font-size: 11px; }
+  .kv .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 550; color: var(--text); }
+  .kv .v.ok  { color: var(--ok); }
+  .kv .v.bad { color: var(--fail); }
+  .kv .v.dim { color: var(--text-faint); }
+
+  @media (max-width: 980px) { .panels { grid-template-columns: minmax(0,1fr); } }
+
+  /* ═══════════════════════ SCRUBBER ═══════════════════════ */
+  .scrubber {
+    display: flex; align-items: center; gap: var(--sp-4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 12px var(--sp-4);
+  }
+  .scrubber > label {
+    font-size: 10px; font-weight: 650; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-faint); white-space: nowrap;
+  }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    flex: 1 1 auto; min-width: 120px; height: 6px;
+    background: var(--surface-3);
+    border-radius: 999px; outline: none; cursor: pointer;
+  }
+  input[type=range]:disabled { opacity: .45; cursor: not-allowed; }
+  input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); border: 2px solid #0a0e14;
+    box-shadow: 0 0 0 1px var(--accent), 0 2px 8px rgba(76,141,255,.5);
+    cursor: pointer;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); border: 2px solid #0a0e14;
+    box-shadow: 0 0 0 1px var(--accent);
+    cursor: pointer;
+  }
+  .scrub-count {
+    font-size: 13px; color: var(--text-dim); white-space: nowrap;
+    min-width: 92px; text-align: right;
+  }
+
+  /* ═══════════════════════ SECTIONS / TABLE ═══════════════════════ */
+  .section-head { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: var(--sp-2); }
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--text-dim);
+  }
+  .section-note { font-size: 12px; color: var(--text-faint); }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    overflow: auto;
+    max-height: 340px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    position: sticky; top: 0; z-index: 1;
+    background: var(--surface-3);
+    border-bottom: 1px solid var(--line);
+    padding: 9px var(--sp-4);
+    text-align: left; white-space: nowrap;
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-dim);
+  }
+  tbody tr { cursor: pointer; transition: background .12s; }
+  tbody tr:hover td { background: var(--surface-2); }
+  tbody tr.selected td { background: var(--accent-dim); }
+  tbody tr.selected td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+  tbody td {
+    padding: 8px var(--sp-4);
+    border-bottom: 1px solid var(--line-soft);
+    white-space: nowrap;
+  }
+  td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .yes { color: var(--ok);   font-weight: 650; }
+  .no  { color: var(--fail); font-weight: 650; }
+  .tag {
+    font-size: 10px; font-weight: 650; letter-spacing: .04em;
+    color: var(--text-faint); background: var(--surface-3);
+    border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px;
+  }
+  .tag.hero { color: var(--ok); background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.3); }
+
+  /* ═══════════════════════ MESSAGES ═══════════════════════ */
+  .msg {
+    border-radius: var(--r-md);
+    padding: 11px var(--sp-4);
+    font-size: 13px;
+    display: none;
+    border: 1px solid transparent;
+  }
+  .msg.show { display: block; }
+  .msg.error { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.38); color: #fca5a5; }
+  .msg.warn  { background: rgba(251,191,36,.09); border-color: rgba(251,191,36,.34); color: #fcd34d; }
+  .msg strong { font-weight: 650; }
+
+  .spinner {
+    display: inline-block; width: 13px; height: 13px;
+    border: 2px solid var(--line); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ═══════════════════════ SANDBOX ═══════════════════════ */
+  .sb-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--sp-4); align-items: start; }
+  @media (max-width: 1080px) { .sb-grid { grid-template-columns: minmax(0,1fr); } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 11px var(--sp-4);
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 11px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--text-dim);
+  }
+  .card-body { padding: var(--sp-4); }
+
+  .sb-canvas-wrap { position: relative; width: 100%; aspect-ratio: 1 / 1; background: #0c1119; cursor: crosshair; }
+  .sb-canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .sb-hint { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); font-size: 12px; }
+  .sb-hint .set    { color: var(--ok); }
+  .sb-hint .notset { color: var(--text-faint); }
+
+  .sr-row { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; margin-bottom: 7px; font-size: 13px; }
+  .sr-who { font-weight: 650; min-width: 62px; }
+  .sr-who.warm { color: var(--warm); }
+  .sr-who.cold { color: var(--cold); }
+  .sr-who.dijk { color: var(--dijk); }
+
+  /* ═══════════════════════ OVERLAYS ═══════════════════════ */
+  #startupOverlay {
+    position: fixed; inset: 0; z-index: 10000;
+    background: rgba(10,14,20,.94);
+    backdrop-filter: blur(6px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  }
+  #startupOverlay .so-title { font-size: 16px; font-weight: 600; }
+  #startupOverlay .so-sub { font-size: 13px; color: var(--text-dim); }
+  #startupOverlay .so-el { font-family: var(--font-mono); font-size: 13px; color: var(--text-faint); }
+
+  #globalErrorBanner {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 9999;
+    background: #4a1418; border-top: 1px solid rgba(248,113,113,.5);
+    color: #fecaca; padding: 12px var(--sp-5);
+    align-items: center; justify-content: space-between; gap: var(--sp-4);
+    font-size: 13px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="startupOverlay">
+  <div class="spinner" style="width:22px;height:22px;border-width:3px;"></div>
+  <div class="so-title">Precomputing scenarios</div>
+  <div class="so-sub">Loading demo checkpoints and running every rollout once…</div>
+  <div class="so-el" id="startupElapsed">0s</div>
+</div>
+
+<header class="app-header">
+  <div class="app-header-inner">
+    <div class="brand">
+      <h1>GNN-DQN Warm-Start Pathfinding</h1>
+      <span class="venue">ICDM 2026 Demo</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="reach"   onclick="switchTab('reach')">Reach</button>
+      <button class="nav-btn"        data-tab="sandbox" onclick="switchTab('sandbox')">Sandbox</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ═══════════════════════  REACH TAB  ═══════════════════════ -->
+  <div class="tab-pane active stack" id="tab-reach">
+
+    <section class="toolbar">
+      <div class="tb-cluster selection">
+        <div class="field grow">
+          <label for="scenSelect">Instance</label>
+          <div class="field-row">
+            <div class="seg" role="group" aria-label="Instance list">
+              <button class="seg-btn active" id="segShowcase" onclick="setScenarioMode('showcase')"
+                      title="Curated order: strongest demo instances first. Every instance stays reachable via 'All'.">Showcase</button>
+              <button class="seg-btn" id="segAll" onclick="setScenarioMode('all')"
+                      title="Every evaluated instance, same curated ordering.">All</button>
+            </div>
+            <select id="scenSelect" onchange="onScenarioChange()">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field grow">
+          <label for="perturbSelect">Perturbation</label>
+          <select id="perturbSelect" onchange="onPerturbChange()"
+                  title="Training level uses the exact graph the paper's numbers are reported on. The OOD options rebuild the graph from scratch at a different edge-fail rate — a fresh out-of-distribution realisation, not a mild variation on training.">
+            <option value="1.0" selected>Training level — paper numbers apply</option>
+            <option value="0.5">OOD stress test — off-training, 0.5× edge-fail (not paper conditions)</option>
+            <option value="2.0">OOD stress test — off-training, 2× edge-fail (both agents may fail; not paper conditions)</option>
+          </select>
+        </div>
+
+        <div class="field grow" id="oracleField" hidden>
+          <label for="oracleSelect">Oracle source</label>
+          <select id="oracleSelect" onchange="onOracleChange()">
+            <option value="full_pool">Full pool (paper baseline)</option>
+            <option value="classical_only">Classical only</option>
+            <option value="quantum_only">Quantum only (QAOA)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tb-cluster playback">
+        <div class="field">
+          <label>Playback</label>
+          <div class="field-row">
+            <button class="btn primary" id="btnRun"   onclick="runReach()"  disabled>Load</button>
+            <button class="btn"         id="btnPlay"  onclick="togglePlay()" disabled>▶ Play</button>
+            <button class="btn"         id="btnReset" onclick="resetAnim()"  disabled>↺ Reset</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="speedSelect">Speed</label>
+          <select id="speedSelect" onchange="onSpeedChange()" style="width:auto;"
+                  title="Animation playback speed only — does not change which checkpoint, scenario, or training tier is loaded.">
+            <option value="200">1×</option>
+            <option value="50">4×</option>
+            <option value="0">Instant</option>
+          </select>
+        </div>
+        <span class="tb-sep"></span>
+        <div class="field">
+          <label>&nbsp;</label>
+          <div class="field-row">
+            <button class="btn ghost" onclick="resetToDefaults()"
+                    title="Restore the showcase default: 50x50_s1 at training-level perturbation, full oracle pool.">↺ Defaults</button>
+            <span class="tb-status" id="loadingIndicator" hidden><span class="spinner"></span> Loading…</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="reachOodNote" class="msg warn">
+      <strong>Off-training realisation.</strong> Same trained agents, but the graph's edge/node state has been
+      redrawn from scratch at a different failure rate — not a small increase or decrease over training.
+      Both agents are substantially out-of-distribution here and either may fail. The paper's reach and
+      ratio numbers apply only at <strong>Training level</strong>.
+    </div>
+
+    <div class="msg error" id="reachError"></div>
+
+    <!-- ── Top metric strip ── -->
+    <section class="metric-strip">
+      <article class="stat" id="statWarm" style="--stat-accent: var(--warm);">
+        <span class="stat-k">Warm agent — reach</span>
+        <span class="stat-v idle" id="mWarmV">—</span>
+        <span class="stat-sub" id="mWarmSub">awaiting run</span>
+      </article>
+      <article class="stat" id="statCold" style="--stat-accent: var(--cold);">
+        <span class="stat-k">Cold agent — reach</span>
+        <span class="stat-v idle" id="mColdV">—</span>
+        <span class="stat-sub" id="mColdSub">awaiting run</span>
+      </article>
+      <article class="stat" id="statRatio" style="--stat-accent: var(--dijk);">
+        <span class="stat-k">Warm optimality gap</span>
+        <span class="stat-v idle" id="mRatioV">—</span>
+        <span class="stat-sub" id="mRatioSub">× Dijkstra optimal cost</span>
+      </article>
+      <article class="stat" id="statLat" style="--stat-accent: var(--accent);">
+        <span class="stat-k">Inference latency</span>
+        <span class="stat-v idle" id="mLatV">—</span>
+        <span class="stat-sub" id="mLatSub">warm, per decision</span>
+      </article>
+    </section>
+
+    <!-- ── Three-panel comparison ── -->
+    <section class="panels" id="panelsRow">
+      <article class="panel" id="panelWarm">
+        <div class="panel-head">
+          <span class="panel-dot" style="--dot: var(--warm);"></span>
+          <h3 id="warmCardLabel">Warm Agent</h3>
+          <span class="winner-flag" id="warmWinnerFlag" hidden>Winner</span>
+          <span class="badge idle" id="warmBadge">—</span>
+        </div>
+        <div class="canvas-wrap"><canvas id="cvWarm"></canvas></div>
+        <div class="panel-foot" id="warmFoot"><span class="kv"><span class="v dim">—</span></span></div>
+      </article>
+
+      <article class="panel" id="panelCold">
+        <div class="panel-head">
+          <span class="panel-dot" style="--dot: var(--cold);"></span>
+          <h3>Cold Agent</h3>
+          <span class="winner-flag" id="coldWinnerFlag" hidden>Winner</span>
+          <span class="badge idle" id="coldBadge">—</span>
+        </div>
+        <div class="canvas-wrap"><canvas id="cvCold"></canvas></div>
+        <div class="panel-foot" id="coldFoot"><span class="kv"><span class="v dim">—</span></span></div>
+      </article>
+
+      <article class="panel" id="panelDijk">
+        <div class="panel-head">
+          <span class="panel-dot" style="--dot: var(--dijk);"></span>
+          <h3>Dijkstra</h3>
+          <span class="badge optimal" id="dijkBadge">Optimal</span>
+        </div>
+        <div class="canvas-wrap"><canvas id="cvDijk"></canvas></div>
+        <div class="panel-foot" id="dijkFoot"><span class="kv"><span class="v dim">—</span></span></div>
+      </article>
+    </section>
+
+    <!-- ── Scrubber ── -->
+    <section class="scrubber">
+      <label for="stepSlider">Step</label>
+      <input type="range" id="stepSlider" min="0" max="0" value="0" oninput="onSlider()" disabled>
+      <span class="scrub-count mono" id="stepLabel">0 / 0</span>
+    </section>
+
+    <!-- ── Legend ── -->
+    <section class="legend">
+      <span class="legend-title">Legend</span>
+      <span class="lg"><i class="line" style="--c: var(--warm);"></i>Warm path</span>
+      <span class="lg"><i class="line" style="--c: var(--cold);"></i>Cold path</span>
+      <span class="lg"><i class="dash" style="--c: var(--dijk);"></i>Dijkstra optimal</span>
+      <span class="lg"><i class="dot"  style="--c: var(--n-start);"></i>Start</span>
+      <span class="lg"><i class="diam" style="--c: var(--n-goal);"></i>Goal</span>
+      <span class="lg"><i class="node" style="--c: var(--n-active);"></i>Active node</span>
+      <span class="lg"><i class="node" style="--c: var(--n-off);"></i>Deactivated by perturbation</span>
+      <span class="lg"><i class="node" style="--c: var(--fail);"></i>Stuck / dead end</span>
+    </section>
+
+    <!-- ── All scenarios ── -->
+    <section>
+      <div class="section-head">
+        <span class="section-title">All Scenarios</span>
+        <span class="section-note">
+          Every evaluated instance at training-level perturbation, unfiltered — including the weakest
+          optimality ratios. Click a row to load it.
+        </span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Instance</th>
+              <th>Scale</th>
+              <th>Warm reached</th>
+              <th>Cold reached</th>
+              <th>Warm cost vs optimal</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody id="cellsTableBody">
+            <tr><td colspan="6" style="color:var(--text-faint);text-align:center;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div><!-- /tab-reach -->
+
+
+  <!-- ═══════════════════════  SANDBOX TAB  ═══════════════════════ -->
+  <div class="tab-pane stack" id="tab-sandbox">
+
+    <section class="toolbar">
+      <div class="tb-cluster selection">
+        <div class="field grow">
+          <label for="sbScenSelect">Agent pair</label>
+          <select id="sbScenSelect" onchange="onSbScenChange()">
+            <option value="">Loading…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Editing mode</label>
+          <div class="field-row">
+            <div class="seg" role="group" aria-label="Editing mode">
+              <button class="seg-btn"        id="sbModeSource" onclick="setSbMode('source')">Source</button>
+              <button class="seg-btn"        id="sbModeDest"   onclick="setSbMode('dest')">Dest</button>
+              <button class="seg-btn active" id="sbModeBlock"  onclick="setSbMode('block')">Block</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tb-cluster playback">
+        <div class="field">
+          <label>Actions</label>
+          <div class="field-row">
+            <button class="btn primary" id="btnRace" onclick="runSandboxRace()" disabled>▶ Race</button>
+            <button class="btn" onclick="sbUseTrainingPair()">Training pair</button>
+            <button class="btn ghost" onclick="sbClearObstacles()">Clear obstacles</button>
+            <button class="btn ghost" onclick="sbResetAll()">Reset all</button>
+            <span class="tb-status" id="sbRaceLoading" hidden><span class="spinner"></span> Running…</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="sbOodNote" class="msg warn">
+      <strong>Custom source/destination — out-of-distribution.</strong> These agents were trained on one fixed
+      route; warm may not reliably reach on arbitrary pairs. The cost ratio shown is always the real
+      measured value regardless of outcome.
+    </div>
+
+    <div id="sbError" class="msg error"></div>
+
+    <div class="sb-grid">
+      <div class="card">
+        <div class="card-head">Interactive grid — click to edit</div>
+        <div class="sb-canvas-wrap"><canvas id="cvSandbox"></canvas></div>
+        <div class="card-body sb-hint" id="sbHint">
+          <span id="sbHintSrc" class="notset">source: not set</span>
+          <span id="sbHintDst" class="notset">dest: not set</span>
+          <span id="sbHintObs" class="notset">obstacles: 0</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">Race results</div>
+        <div class="card-body">
+          <div id="sbResultsEmpty" style="color:var(--text-faint);font-size:13px;">
+            Set a source and destination, optionally block some nodes, then hit <strong>Race</strong>.
+          </div>
+          <div id="sbResults" hidden>
+            <div class="sr-row"><span class="sr-who warm">Warm</span><span id="srWarmRow"></span></div>
+            <div class="sr-row"><span class="sr-who cold">Cold</span><span id="srColdRow"></span></div>
+            <div class="sr-row"><span class="sr-who dijk">Optimal</span><span id="srDijkRow"></span></div>
+            <div class="sr-row" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft);color:var(--text-dim);font-size:12px;">
+              <span id="srLatRow"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-sandbox -->
+
+</main>
+
+<div id="globalErrorBanner">
+  <span id="globalErrorMsg">Something went wrong.</span>
+  <button class="btn" onclick="resetToDefaults()">Restore defaults</button>
+</div>
+
+<script>
+/* ================================================================
+   CURATION — ordering only. No number shown anywhere in this UI is
+   derived from this list; every metric still comes straight from the
+   server's real rollout results. This controls which instance the
+   demo opens on and the order options are presented in.
+   ================================================================ */
+const DEFAULT_CELL    = '50x50_s1';
+const DEFAULT_PERTURB = '1.0';   // training level — paper conditions
+
+/* Strongest demo instance first, weakest optimality ratio last. */
+const SHOWCASE_ORDER = [
+  '50x50_s1',  // HERO — reach win + near-optimal (1.54×)
+  '50x50_s0',  // reach win; matches paper headline gap (4.42×)
+  '25x25_s3',  // quality showcase — warm cheapest (1.40×)
+  '25x25_s2',  // quality showcase (1.74×)
+  '25x25_s4',  // reach win (8.20×)
+  '50x50_s2',  // reach win (8.86×)
+  '50x50_s3',  // reach win (10.71×)
+  '25x25_s1',  // reach win, high ratio (14.32×)
+  '50x50_s4',  // reach win, worst ratio (20.77×)
+];
+const CELL_NOTE = { '50x50_s1': 'Hero — reach win, near-optimal' };
+
+function showcaseRank(cellId) {
+  const i = SHOWCASE_ORDER.indexOf(cellId);
+  return i < 0 ? SHOWCASE_ORDER.length : i;   // uncurated cells sort last, never dropped
+}
+function orderedCells(cells) {
+  return cells
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => (showcaseRank(a.c.cell_id) - showcaseRank(b.c.cell_id)) || (a.i - b.i))
+    .map(x => x.c);
+}
+
+/* ================================================================
+   State
+   ================================================================ */
+let _cells      = [];
+let _reach      = null;
+let _scenMode   = 'showcase';       // 'showcase' | 'all'
+let _animStep   = 0;                // integer step (bound to the slider)
+let _animFrac   = 0;                // 0..1 progress into the next segment
+let _maxStep    = 0;
+let _isPlaying  = false;
+let _rafId      = null;
+let _lastTs     = 0;
+let _stepDelayMs = 200;
+let _inFlightController = null;
+let _transform  = null;             // { scale, offX, offY, radius }
+
+/* ================================================================
+   Canvas sizing — responsive, DPR-aware, decoupled from layout
+   ================================================================ */
+function fitCanvas(cv) {
+  const rect = cv.getBoundingClientRect();
+  const w = Math.max(1, Math.round(rect.width));
+  const h = Math.max(1, Math.round(rect.height));
+  const dpr = window.devicePixelRatio || 1;
+  cv.width  = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+  cv._logW = w;
+  cv._logH = h;
+  // setTransform (not scale) so repeated fits never compound the DPR factor.
+  cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function fitReachCanvases() {
+  ['cvWarm', 'cvCold', 'cvDijk'].forEach(id => fitCanvas(document.getElementById(id)));
+}
+
+let _resizeQueued = false;
+function onLayoutResize() {
+  if (_resizeQueued) return;
+  _resizeQueued = true;
+  requestAnimationFrame(() => {
+    _resizeQueued = false;
+    fitReachCanvases();
+    if (_reach) { buildTransform(); renderAll(); }
+    const sbCv = document.getElementById('cvSandbox');
+    fitCanvas(sbCv);
+    if (_sbGrid) {
+      _sbXform = buildSbTransform(_sbGrid.nodes, sbCv._logW, sbCv._logH);
+      renderSandbox();
+    }
+  });
+}
+
+/* ================================================================
+   Global error safety net (kiosk hardening)
+   ================================================================ */
+function showGlobalError(msg) {
+  document.getElementById('globalErrorMsg').textContent = msg;
+  document.getElementById('globalErrorBanner').style.display = 'flex';
+}
+function hideGlobalError() {
+  document.getElementById('globalErrorBanner').style.display = 'none';
+}
+window.addEventListener('error', () => showGlobalError('An unexpected error occurred. Restore defaults to recover.'));
+window.addEventListener('unhandledrejection', () => showGlobalError('An unexpected error occurred. Restore defaults to recover.'));
+
+async function resetToDefaults() {
+  hideGlobalError();
+  stopPlay();
+  if (_inFlightController) { _inFlightController.abort(); _inFlightController = null; }
+  document.getElementById('perturbSelect').value = DEFAULT_PERTURB;
+  document.getElementById('oracleSelect').value  = 'full_pool';
+  setScenarioMode('showcase', true);
+  selectCell(DEFAULT_CELL);
+  onPerturbChange();
+  await runReach();
+}
+
+/* ================================================================
+   Tabs
+   ================================================================ */
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const btn = document.querySelector(`.nav-btn[data-tab="${name}"]`);
+  if (btn) btn.classList.add('active');
+  if (name === 'sandbox') activateSandboxTab();
+  onLayoutResize();
+}
+
+/* ================================================================
+   Boot
+   ================================================================ */
+window.addEventListener('DOMContentLoaded', async () => {
+  fitReachCanvases();
+  fitCanvas(document.getElementById('cvSandbox'));
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(onLayoutResize);
+    ro.observe(document.getElementById('panelsRow'));
+    ro.observe(document.querySelector('.sb-canvas-wrap'));
+  }
+  window.addEventListener('resize', onLayoutResize);
+
+  await waitForServerReady();
+  document.getElementById('startupOverlay').style.display = 'none';
+  // Open directly on the curated default so the first thing on screen is a
+  // real, paper-conditions result rather than an empty grid.
+  await runReach();
+});
+
+async function waitForServerReady() {
+  const startedAt = Date.now();
+  const elapsedEl = document.getElementById('startupElapsed');
+  const ticker = setInterval(() => {
+    elapsedEl.textContent = Math.floor((Date.now() - startedAt) / 1000) + 's';
+  }, 500);
+  while (true) {
+    try {
+      const res = await fetch('/cells');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) {
+          clearInterval(ticker);
+          _cells = orderedCells(data);
+          populateSelector();
+          populateCellsTable();
+          selectCell(DEFAULT_CELL);
+          document.getElementById('perturbSelect').value = DEFAULT_PERTURB;
+          onPerturbChange();
+          document.getElementById('btnRun').disabled = false;
+          _updateOracleVisibility();
+          return;
+        }
+      }
+    } catch (e) { /* server still in lifespan startup — keep polling */ }
+    await new Promise(r => setTimeout(r, 500));
+  }
+}
+
+/* ================================================================
+   Instance selector
+   ================================================================ */
+function visibleCells() {
+  return _scenMode === 'showcase'
+    ? _cells.filter(c => SHOWCASE_ORDER.includes(c.cell_id))
+    : _cells;
+}
+
+function optionLabel(c) {
+  const w = c.warm_reached ? 'warm ✓' : 'warm ✗';
+  const k = c.cold_reached ? 'cold ✓' : 'cold ✗';
+  const r = c.warm_ratio != null ? c.warm_ratio.toFixed(2) + '× opt' : 'no ratio';
+  return `${c.cell_id} · ${c.scale} · ${w} / ${k} · ${r}`;
+}
+
+function populateSelector() {
+  const sel = document.getElementById('scenSelect');
+  const keep = sel.value;
+  sel.innerHTML = '';
+  visibleCells().forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.cell_id;
+    opt.textContent = optionLabel(c);
+    sel.appendChild(opt);
+  });
+  if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+}
+
+function selectCell(cellId) {
+  const sel = document.getElementById('scenSelect');
+  if ([...sel.options].some(o => o.value === cellId)) {
+    sel.value = cellId;
+  } else if (sel.options.length) {
+    sel.selectedIndex = 0;
+  }
+  _updateOracleVisibility();
+  markSelectedRow();
+}
+
+function setScenarioMode(mode, silent) {
+  _scenMode = mode;
+  document.getElementById('segShowcase').classList.toggle('active', mode === 'showcase');
+  document.getElementById('segAll').classList.toggle('active', mode === 'all');
+  const current = document.getElementById('scenSelect').value;
+  populateSelector();
+  selectCell(current || DEFAULT_CELL);
+  if (!silent && document.getElementById('scenSelect').value !== current) onScenarioChange();
+}
+
+function _currentCellMeta() {
+  const cellId = document.getElementById('scenSelect').value;
+  return _cells.find(c => c.cell_id === cellId) || null;
+}
+
+function _updateOracleVisibility() {
+  const meta = _currentCellMeta();
+  const show = !!(meta && meta.oracle_available);
+  document.getElementById('oracleField').hidden = !show;
+  if (!show) document.getElementById('oracleSelect').value = 'full_pool';
+  _updateWarmLabel();
+}
+
+function _updateWarmLabel() {
+  const arm = document.getElementById('oracleField').hidden
+    ? 'full_pool'
+    : document.getElementById('oracleSelect').value;
+  const labels = {
+    full_pool:      'Warm Agent',
+    classical_only: 'Warm — Classical oracle only',
+    quantum_only:   'Warm — Quantum oracle only (QAOA)',
+  };
+  document.getElementById('warmCardLabel').textContent = labels[arm] || 'Warm Agent';
+}
+
+function invalidateRun() {
+  _reach = null;
+  stopPlay();
+  _animStep = 0; _animFrac = 0; _maxStep = 0;
+  const slider = document.getElementById('stepSlider');
+  slider.value = 0; slider.max = 0; slider.disabled = true;
+  updateStepLabel();
+  clearCanvases();
+  clearMetrics();
+  document.getElementById('btnPlay').disabled = true;
+  document.getElementById('btnReset').disabled = true;
+}
+
+function onScenarioChange() { _updateOracleVisibility(); markSelectedRow(); invalidateRun(); }
+function onOracleChange()   { _updateWarmLabel(); invalidateRun(); }
+function onPerturbChange() {
+  const v = parseFloat(document.getElementById('perturbSelect').value);
+  document.getElementById('reachOodNote').classList.toggle('show', v !== 1.0);
+  invalidateRun();
+}
+
+/* ================================================================
+   All-scenarios table — every instance, real numbers, unfiltered
+   ================================================================ */
+function populateCellsTable() {
+  const tbody = document.getElementById('cellsTableBody');
+  tbody.innerHTML = '';
+  _cells.forEach(c => {
+    const tr = document.createElement('tr');
+    tr.dataset.cellId = c.cell_id;
+    const wr = c.warm_reached ? '<span class="yes">Yes</span>' : '<span class="no">No</span>';
+    const cr = c.cold_reached ? '<span class="yes">Yes</span>' : '<span class="no">No</span>';
+    const ratio = c.warm_ratio != null ? c.warm_ratio.toFixed(2) + '×' : '—';
+    const note = CELL_NOTE[c.cell_id]
+      ? `<span class="tag hero">${CELL_NOTE[c.cell_id]}</span>`
+      : (SHOWCASE_ORDER.includes(c.cell_id) ? '' : '<span class="tag">not in showcase</span>');
+    tr.innerHTML = `
+      <td class="mono">${c.cell_id}</td>
+      <td>${c.scale}</td>
+      <td>${wr}</td>
+      <td>${cr}</td>
+      <td class="num">${ratio}</td>
+      <td>${note}</td>
+    `;
+    tr.addEventListener('click', () => {
+      if (!visibleCells().some(v => v.cell_id === c.cell_id)) setScenarioMode('all', true);
+      selectCell(c.cell_id);
+      onScenarioChange();
+      runReach();
+    });
+    tbody.appendChild(tr);
+  });
+  markSelectedRow();
+}
+
+function markSelectedRow() {
+  const cur = document.getElementById('scenSelect').value;
+  document.querySelectorAll('#cellsTableBody tr').forEach(r => {
+    r.classList.toggle('selected', r.dataset.cellId === cur);
+  });
+}
+
+/* ================================================================
+   Run /reach
+   ================================================================ */
+async function runReach() {
+  const cellId = document.getElementById('scenSelect').value;
+  if (!cellId) return;
+  if (_inFlightController) _inFlightController.abort();
+  _inFlightController = new AbortController();
+  const myController = _inFlightController;
+
+  stopPlay();
+  clearCanvases();
+  clearMetrics();
+  hideMsg('reachError');
+  hideGlobalError();
+  setLoading(true);
+
+  const perturb = parseFloat(document.getElementById('perturbSelect').value) || 1.0;
+  const oracleArm = document.getElementById('oracleField').hidden
+    ? 'full_pool'
+    : document.getElementById('oracleSelect').value;
+  const useOracle = (oracleArm !== 'full_pool') && (perturb === 1.0);
+
+  try {
+    const res = useOracle
+      ? await fetch('/oracle_reach', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cell_id: cellId, oracle_arm: oracleArm }),
+          signal: myController.signal })
+      : await fetch('/reach', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cell_id: cellId, perturb_multiplier: perturb }),
+          signal: myController.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+    const text = await res.text();
+    _reach = JSON.parse(text.replace(/:\s*Infinity\b/g, ': null'));
+    if (myController !== _inFlightController) return;   // superseded by a newer request
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    setLoading(false);
+    showMsg('reachError', 'Failed to load instance: ' + e.message);
+    return;
+  }
+
+  setLoading(false);
+  fitReachCanvases();
+  buildTransform();
+  _maxStep = Math.max(
+    (_reach.warm.path || []).length - 1,
+    (_reach.cold.path || []).length - 1,
+    0
+  );
+  // Land on the completed frame so the comparison is legible the instant it
+  // loads; Play rewinds to 0 and replays it.
+  _animStep = _maxStep;
+  _animFrac = 0;
+
+  const slider = document.getElementById('stepSlider');
+  slider.max = _maxStep;
+  slider.value = _maxStep;
+  slider.disabled = _maxStep === 0;
+
+  document.getElementById('btnPlay').disabled  = _maxStep === 0;
+  document.getElementById('btnReset').disabled = _maxStep === 0;
+
+  updateStepLabel();
+  renderAll();
+  renderMetrics();
+  markSelectedRow();
+}
+
+/* ================================================================
+   Transform: fit node coords into the current canvas box
+   ================================================================ */
+function buildTransform() {
+  const nodes = _reach && _reach.grid.nodes;
+  if (!nodes || !nodes.length) { _transform = null; return; }
+
+  const cv = document.getElementById('cvWarm');
+  const W = cv._logW || 480, H = cv._logH || 480;
+  const PAD = Math.max(14, Math.round(W * 0.055));
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [x, y] of nodes) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const scale = Math.min((W - 2 * PAD) / rangeX, (H - 2 * PAD) / rangeY);
+
+  _transform = {
+    scale,
+    offX: PAD + (W - 2 * PAD - rangeX * scale) / 2 - minX * scale,
+    offY: PAD + (H - 2 * PAD - rangeY * scale) / 2 - minY * scale,
+    radius: Math.max(1.15, Math.min(5, scale * 0.26)),
+  };
+}
+
+function nodeXY(idx) {
+  const [x, y] = _reach.grid.nodes[idx];
+  return [x * _transform.scale + _transform.offX, y * _transform.scale + _transform.offY];
+}
+
+/* ================================================================
+   Render
+   ================================================================ */
+function renderAll() {
+  if (!_reach || !_transform) return;
+  renderCanvas('cvWarm', _reach.warm, 'var-warm', '#34d399', false);
+  renderCanvas('cvCold', _reach.cold, 'var-cold', '#fb923c', false);
+  renderCanvas('cvDijk', null,        'var-dijk', '#60a5fa', true);
+}
+
+/* Draw a polyline over `path`, advanced to (upTo + frac) of the way along. */
+function strokePath(ctx, path, upTo, frac, color, width, dash, glow) {
+  if (!path || path.length < 2) return;
+  const last = Math.min(upTo, path.length - 1);
+  if (last < 1 && frac <= 0) return;
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  if (dash) ctx.setLineDash(dash);
+  if (glow) { ctx.shadowColor = color; ctx.shadowBlur = 8; }
+
+  ctx.beginPath();
+  const [x0, y0] = nodeXY(path[0]);
+  ctx.moveTo(x0, y0);
+  for (let i = 1; i <= last; i++) {
+    const [x, y] = nodeXY(path[i]);
+    ctx.lineTo(x, y);
+  }
+  // partial segment for sub-step smoothness
+  if (frac > 0 && last + 1 < path.length) {
+    const [ax, ay] = nodeXY(path[last]);
+    const [bx, by] = nodeXY(path[last + 1]);
+    ctx.lineTo(ax + (bx - ax) * frac, ay + (by - ay) * frac);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* Interpolated head position at (upTo + frac). */
+function headXY(path, upTo, frac) {
+  if (!path || !path.length) return null;
+  const i = Math.min(upTo, path.length - 1);
+  const [ax, ay] = nodeXY(path[i]);
+  if (frac > 0 && i + 1 < path.length) {
+    const [bx, by] = nodeXY(path[i + 1]);
+    return [ax + (bx - ax) * frac, ay + (by - ay) * frac];
+  }
+  return [ax, ay];
+}
+
+function renderCanvas(canvasId, agent, _tag, pathColor, isDijkstra) {
+  const cv = document.getElementById(canvasId);
+  const ctx = cv.getContext('2d');
+  const W = cv._logW, H = cv._logH;
+  ctx.clearRect(0, 0, W, H);
+
+  const nodes  = _reach.grid.nodes;
+  const edges  = _reach.grid.edges;
+  const srcIdx = _reach.grid.src_idx;
+  const dstIdx = _reach.grid.dst_idx;
+  const r = _transform.radius;
+
+  // ── graph edges ──
+  ctx.save();
+  ctx.strokeStyle = '#1e2a3b';
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  for (const [u, v] of edges) {
+    if (nodes[u][2] < 0.5 || nodes[v][2] < 0.5) continue;
+    const [ux, uy] = nodeXY(u);
+    const [vx, vy] = nodeXY(v);
+    ctx.moveTo(ux, uy); ctx.lineTo(vx, vy);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // ── nodes ──
+  for (let idx = 0; idx < nodes.length; idx++) {
+    if (idx === srcIdx || idx === dstIdx) continue;
+    const [px, py] = nodeXY(idx);
+    const active = nodes[idx][2];
+    ctx.beginPath();
+    if (active >= 0.5) {
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#46566e';
+    } else {
+      ctx.arc(px, py, r * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = '#232d40';
+    }
+    ctx.fill();
+  }
+
+  // ── Dijkstra optimal reference — dashed underlay on every panel ──
+  const dijkPath = _reach.dijkstra.path || [];
+  strokePath(ctx, dijkPath, dijkPath.length - 1, 0,
+             isDijkstra ? '#60a5fa' : 'rgba(96,165,250,0.42)',
+             isDijkstra ? 2.6 : 1.6, [6, 5], isDijkstra);
+
+  // ── agent path + visited trail ──
+  if (!isDijkstra && agent) {
+    const path = agent.path || [];
+    const upTo = Math.min(_animStep, Math.max(0, path.length - 1));
+
+    strokePath(ctx, path, upTo, _animFrac, pathColor, 2.8, null, true);
+
+    // visited nodes along the traversed prefix
+    ctx.save();
+    ctx.fillStyle = pathColor;
+    ctx.globalAlpha = 0.55;
+    for (let i = 0; i <= upTo && i < path.length; i++) {
+      const [px, py] = nodeXY(path[i]);
+      ctx.beginPath();
+      ctx.arc(px, py, r * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── start / goal markers, drawn last so they always read ──
+  if (srcIdx >= 0) {
+    const [px, py] = nodeXY(srcIdx);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(px, py, r + 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#22d3ee';
+    ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.restore();
+  }
+  if (dstIdx >= 0) {
+    const [px, py] = nodeXY(dstIdx);
+    const s = r + 3.6;
+    ctx.save();
+    ctx.translate(px, py); ctx.rotate(Math.PI / 4);
+    ctx.beginPath();
+    ctx.rect(-s, -s, s * 2, s * 2);
+    ctx.fillStyle = '#e879f9';
+    ctx.shadowColor = '#e879f9'; ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── moving head marker ──
+  if (!isDijkstra && agent) {
+    const path = agent.path || [];
+    const upTo = Math.min(_animStep, Math.max(0, path.length - 1));
+    const head = headXY(path, upTo, _animFrac);
+    if (head) {
+      const atEnd = upTo >= path.length - 1;
+      const stuck = atEnd && !agent.reached;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(head[0], head[1], r + 2.4, 0, Math.PI * 2);
+      ctx.fillStyle = stuck ? '#f87171' : pathColor;
+      ctx.shadowColor = stuck ? '#f87171' : pathColor;
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,255,255,.85)';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      if (stuck) {                       // honest dead-end marker
+        const k = r + 1.2;
+        ctx.strokeStyle = '#0a0e14'; ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(head[0] - k, head[1] - k); ctx.lineTo(head[0] + k, head[1] + k);
+        ctx.moveTo(head[0] + k, head[1] - k); ctx.lineTo(head[0] - k, head[1] + k);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+}
+
+function clearCanvases() {
+  ['cvWarm', 'cvCold', 'cvDijk'].forEach(id => {
+    const cv = document.getElementById(id);
+    cv.getContext('2d').clearRect(0, 0, cv._logW || cv.width, cv._logH || cv.height);
+  });
+}
+
+/* ================================================================
+   Metrics — strip, badges, winner highlight, per-panel footers.
+   Every value here is read straight off the server response.
+   ================================================================ */
+function fmtCost(v)  { return (v == null || v === Infinity) ? '∞' : v.toFixed(1); }
+function fmtRatio(v) { return v != null ? v.toFixed(2) + '×' : 'N/A'; }
+
+/* Badge/headline wording. The reason a run failed (budget exhausted vs. a
+   genuine dead end) is qualified in the sub-line, never hidden. */
+function reachWord(reached, unsolvable) {
+  if (unsolvable) return 'NO PATH';
+  return reached ? 'REACHED' : 'FAILED';
+}
+
+function reachDetail(a, unsolvable) {
+  if (unsolvable) return 'no path exists — verified by Dijkstra';
+  if (a.reached) return `${a.steps} steps · cost ${fmtCost(a.cost)}`;
+  if (a.hit_step_budget) return `${a.steps} steps · step budget exhausted`;
+  return `${a.steps} steps · dead end, no unvisited move`;
+}
+
+function renderMetrics() {
+  if (!_reach) return;
+  const w = _reach.warm, c = _reach.cold, d = _reach.dijkstra;
+  const uns = !!d.structurally_unsolvable;
+
+  // ── panel badges ──
+  setBadge('warmBadge', w, uns);
+  setBadge('coldBadge', c, uns);
+
+  // ── winner highlight (never fabricated: derived from the real result) ──
+  const warmReachWin = w.reached && !c.reached;
+  const coldReachWin = c.reached && !w.reached;
+  const bothReached  = w.reached && c.reached;
+  const warmCheaper  = bothReached && w.cost != null && c.cost != null && w.cost < c.cost;
+  const coldCheaper  = bothReached && w.cost != null && c.cost != null && c.cost < w.cost;
+
+  applyWinner('panelWarm', 'warmWinnerFlag',
+    warmReachWin ? 'Reach win' : warmCheaper ? 'Cheaper path' : null);
+  applyWinner('panelCold', 'coldWinnerFlag',
+    coldReachWin ? 'Reach win' : coldCheaper ? 'Cheaper path' : null);
+
+  // ── top metric strip ──
+  setStat('mWarmV', 'mWarmSub',
+    reachWord(w.reached, uns),
+    uns ? 'idle' : (w.reached ? 'ok' : 'bad'),
+    reachDetail(w, uns));
+
+  setStat('mColdV', 'mColdSub',
+    reachWord(c.reached, uns),
+    uns ? 'idle' : (c.reached ? 'ok' : 'bad'),
+    reachDetail(c, uns));
+
+  // Optimality gap stays visible at all times — strength and limitation in one view.
+  const ratio = w.cost_ratio_vs_dijkstra;
+  setStat('mRatioV', 'mRatioSub',
+    fmtRatio(ratio),
+    ratio == null ? 'idle' : 'info',
+    ratio == null
+      ? (uns ? 'no path exists — undefined' : 'warm did not reach — undefined')
+      : `× Dijkstra optimal (${fmtCost(d.cost)})`);
+
+  setStat('mLatV', 'mLatSub',
+    w.mean_latency_ms != null ? w.mean_latency_ms.toFixed(2) + ' ms' : '—',
+    w.mean_latency_ms != null ? 'info' : 'idle',
+    `warm, per decision · encode ${w.encode_ms != null ? w.encode_ms.toFixed(0) + ' ms' : '—'}`);
+
+  // ── panel footers ──
+  document.getElementById('warmFoot').innerHTML = footHtml(w, uns);
+  document.getElementById('coldFoot').innerHTML = footHtml(c, uns);
+  document.getElementById('dijkFoot').innerHTML = `
+    ${kv('cost', fmtCost(d.cost))}
+    ${kv('path len', (d.path || []).length)}
+    ${kv('status', uns ? 'no path exists' : 'optimal reference', uns ? 'dim' : 'ok')}
+  `;
+}
+
+function setBadge(id, agent, unsolvable) {
+  const el = document.getElementById(id);
+  el.textContent = reachWord(agent.reached, unsolvable);
+  el.className = 'badge ' + (unsolvable ? 'unsolvable' : (agent.reached ? 'reached' : 'failed'));
+}
+
+function applyWinner(panelId, flagId, label) {
+  document.getElementById(panelId).classList.toggle('is-winner', !!label);
+  const flag = document.getElementById(flagId);
+  flag.hidden = !label;
+  if (label) flag.textContent = label;
+}
+
+function setStat(vId, subId, value, cls, sub) {
+  const v = document.getElementById(vId);
+  v.textContent = value;
+  v.className = 'stat-v ' + cls;
+  document.getElementById(subId).textContent = sub;
+}
+
+function kv(k, v, cls) {
+  return `<span class="kv"><span class="k">${k}</span><span class="v ${cls || ''}">${v}</span></span>`;
+}
+
+function footHtml(a, unsolvable) {
+  let reachStr, reachCls;
+  if (unsolvable)                       { reachStr = '⊘ no path exists'; reachCls = 'dim'; }
+  else if (!a.reached && a.hit_step_budget) { reachStr = '⏱ budget expired'; reachCls = 'bad'; }
+  else if (a.reached)                   { reachStr = '✓ reached'; reachCls = 'ok'; }
+  else                                  { reachStr = '✗ failed';  reachCls = 'bad'; }
+  return `
+    ${kv('reach', reachStr, reachCls)}
+    ${kv('steps', a.steps)}
+    ${kv('cost', fmtCost(a.cost))}
+    ${kv('vs opt', fmtRatio(a.cost_ratio_vs_dijkstra))}
+    ${kv('lat', a.mean_latency_ms != null ? a.mean_latency_ms.toFixed(2) + ' ms' : '—')}
+  `;
+}
+
+function clearMetrics() {
+  ['warmBadge', 'coldBadge'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '—';
+    el.className = 'badge idle';
+  });
+  applyWinner('panelWarm', 'warmWinnerFlag', null);
+  applyWinner('panelCold', 'coldWinnerFlag', null);
+  setStat('mWarmV',  'mWarmSub',  '—', 'idle', 'awaiting run');
+  setStat('mColdV',  'mColdSub',  '—', 'idle', 'awaiting run');
+  setStat('mRatioV', 'mRatioSub', '—', 'idle', '× Dijkstra optimal cost');
+  setStat('mLatV',   'mLatSub',   '—', 'idle', 'warm, per decision');
+  ['warmFoot', 'coldFoot', 'dijkFoot'].forEach(id => {
+    document.getElementById(id).innerHTML = '<span class="kv"><span class="v dim">—</span></span>';
+  });
+  _updateWarmLabel();
+}
+
+/* ================================================================
+   Animation — rAF-driven, sub-step interpolated
+   ================================================================ */
+function onSlider() {
+  stopPlay();
+  _animStep = parseInt(document.getElementById('stepSlider').value, 10) || 0;
+  _animFrac = 0;
+  updateStepLabel();
+  renderAll();
+}
+
+function syncSlider() { document.getElementById('stepSlider').value = _animStep; }
+function updateStepLabel() {
+  document.getElementById('stepLabel').textContent = `${_animStep} / ${_maxStep}`;
+}
+
+function onSpeedChange() {
+  _stepDelayMs = parseInt(document.getElementById('speedSelect').value, 10);
+  if (_isPlaying && _stepDelayMs === 0) { stopPlay(); jumpToEnd(); }
+}
+
+function togglePlay() { _isPlaying ? stopPlay() : startPlay(); }
+
+function jumpToEnd() {
+  _animStep = _maxStep; _animFrac = 0;
+  syncSlider(); updateStepLabel(); renderAll();
+}
+
+function startPlay() {
+  if (!_reach || _maxStep === 0) return;
+  if (_stepDelayMs === 0) { jumpToEnd(); return; }
+  if (_animStep >= _maxStep) { _animStep = 0; _animFrac = 0; }   // replay from the top
+  _isPlaying = true;
+  document.getElementById('btnPlay').textContent = '❚❚ Pause';
+  _lastTs = performance.now();
+  _rafId = requestAnimationFrame(tickAnim);
+}
+
+function tickAnim(ts) {
+  if (!_isPlaying) return;
+  const dt = Math.min(120, ts - _lastTs);   // clamp so a tab-switch stall can't jump the path
+  _lastTs = ts;
+
+  _animFrac += dt / _stepDelayMs;
+  while (_animFrac >= 1 && _animStep < _maxStep) { _animFrac -= 1; _animStep++; }
+
+  if (_animStep >= _maxStep) { stopPlay(); jumpToEnd(); return; }
+
+  syncSlider();
+  updateStepLabel();
+  renderAll();
+  _rafId = requestAnimationFrame(tickAnim);
+}
+
+function stopPlay() {
+  _isPlaying = false;
+  if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+  _animFrac = 0;
+  document.getElementById('btnPlay').textContent = '▶ Play';
+}
+
+function resetAnim() {
+  stopPlay();
+  _animStep = 0; _animFrac = 0;
+  syncSlider();
+  updateStepLabel();
+  if (_reach) renderAll();
+}
+
+/* ================================================================
+   SANDBOX TAB
+   ================================================================ */
+let _sbGrid       = null;
+let _sbBlocked    = new Set();
+let _sbSrc        = -1;
+let _sbDst        = -1;
+let _sbTrainSrc   = -1;
+let _sbTrainDst   = -1;
+let _sbCellId     = '25x25_s1';
+let _sbMode       = 'block';
+let _sbRaceResult = null;
+let _sbAnimStep   = 0;
+let _sbAnimTimer  = null;
+let _sbLoaded     = false;
+let _sbXform      = null;
+
+function activateSandboxTab() {
+  if (!_sbLoaded) { _sbLoaded = true; loadSandboxScenarios(); }
+}
+
+async function loadSandboxScenarios() {
+  try {
+    const res = await fetch('/sandbox/scenarios');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const scenarios = await res.json();
+    const ordered = scenarios
+      .map((s, i) => ({ s, i }))
+      .sort((a, b) => (showcaseRank(a.s.cell_id) - showcaseRank(b.s.cell_id)) || (a.i - b.i))
+      .map(x => x.s);
+    const sel = document.getElementById('sbScenSelect');
+    sel.innerHTML = '';
+    ordered.forEach(sc => {
+      const opt = document.createElement('option');
+      opt.value = sc.cell_id;
+      opt.textContent = `${sc.cell_id} · ${sc.scale}`;
+      sel.appendChild(opt);
+    });
+    const prefer = ordered.findIndex(s => s.cell_id === '25x25_s1');
+    if (prefer >= 0) sel.selectedIndex = prefer;
+    await loadSandboxGrid(sel.value);
+  } catch (e) {
+    showMsg('sbError', 'Failed to load sandbox scenarios: ' + e.message);
+  }
+}
+
+async function loadSandboxGrid(cellId) {
+  _sbCellId = cellId || '25x25_s1';
+  try {
+    const res = await fetch('/sandbox/grid?cell_id=' + encodeURIComponent(_sbCellId));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    _sbGrid = await res.json();
+    _sbTrainSrc = _sbGrid.train_src_idx;
+    _sbTrainDst = _sbGrid.train_dst_idx;
+    const cv = document.getElementById('cvSandbox');
+    fitCanvas(cv);
+    _sbXform = buildSbTransform(_sbGrid.nodes, cv._logW, cv._logH);
+    cv.removeEventListener('click', onSbCanvasClick);
+    cv.addEventListener('click', onSbCanvasClick);
+    sbUseTrainingPair();
+    renderSandbox();
+  } catch (e) {
+    showMsg('sbError', 'Failed to load grid: ' + e.message);
+  }
+}
+
+async function onSbScenChange() {
+  const cellId = document.getElementById('sbScenSelect').value;
+  if (!cellId) return;
+  stopSandboxAnim();
+  _sbBlocked.clear();
+  _sbSrc = -1; _sbDst = -1;
+  _sbRaceResult = null;
+  document.getElementById('sbResults').hidden = true;
+  document.getElementById('sbResultsEmpty').hidden = false;
+  hideMsg('sbError');
+  await loadSandboxGrid(cellId);
+}
+
+function sbUseTrainingPair() {
+  if (_sbTrainSrc < 0 || _sbTrainDst < 0) return;
+  _sbSrc = _sbTrainSrc;
+  _sbDst = _sbTrainDst;
+  updateSandboxHint();
+  updateOodNote();
+  renderSandbox();
+}
+
+function updateOodNote() {
+  const isTrainingPair = (_sbSrc === _sbTrainSrc && _sbDst === _sbTrainDst);
+  document.getElementById('sbOodNote').classList.toggle('show', !isTrainingPair);
+}
+
+function buildSbTransform(nodes, logW, logH) {
+  const PAD = Math.max(14, Math.round(logW * 0.045));
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [x, y] of nodes) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const sc = Math.min((logW - 2 * PAD) / rangeX, (logH - 2 * PAD) / rangeY);
+  const offX = PAD + (logW - 2 * PAD - rangeX * sc) / 2;
+  const offY = PAD + (logH - 2 * PAD - rangeY * sc) / 2;
+  return {
+    toX: gx => offX + (gx - minX) * sc,
+    toY: gy => offY + (gy - minY) * sc,
+    r: Math.max(2.5, Math.min(7, sc * 0.36)),
+  };
+}
+
+function sbNearestNode(cx, cy) {
+  if (!_sbGrid) return -1;
+  let bestIdx = -1, bestDist = Infinity;
+  for (let i = 0; i < _sbGrid.nodes.length; i++) {
+    const [gx, gy] = _sbGrid.nodes[i];
+    const d = Math.hypot(cx - _sbXform.toX(gx), cy - _sbXform.toY(gy));
+    if (d < bestDist) { bestDist = d; bestIdx = i; }
+  }
+  return bestDist < 20 ? bestIdx : -1;
+}
+
+function onSbCanvasClick(e) {
+  if (!_sbGrid) return;
+  const rect = this.getBoundingClientRect();
+  const idx = sbNearestNode(e.clientX - rect.left, e.clientY - rect.top);
+  if (idx < 0) return;
+  if (_sbGrid.nodes[idx][2] < 0.5) return;
+
+  if (_sbMode === 'source') {
+    _sbSrc = idx;
+    if (_sbDst === idx) _sbDst = -1;
+  } else if (_sbMode === 'dest') {
+    _sbDst = idx;
+    if (_sbSrc === idx) _sbSrc = -1;
+  } else {
+    if (idx === _sbSrc || idx === _sbDst) return;
+    _sbBlocked.has(idx) ? _sbBlocked.delete(idx) : _sbBlocked.add(idx);
+  }
+  renderSandbox();
+  updateSandboxHint();
+  updateOodNote();
+}
+
+function setSbMode(mode) {
+  _sbMode = mode;
+  const map = { source: 'sbModeSource', dest: 'sbModeDest', block: 'sbModeBlock' };
+  Object.entries(map).forEach(([m, id]) => {
+    document.getElementById(id).classList.toggle('active', m === mode);
+  });
+}
+
+function updateSandboxHint() {
+  const srcEl = document.getElementById('sbHintSrc');
+  const dstEl = document.getElementById('sbHintDst');
+  const obsEl = document.getElementById('sbHintObs');
+  if (_sbSrc >= 0) {
+    srcEl.textContent = `source: node ${_sbSrc}${_sbSrc === _sbTrainSrc ? ' (train)' : ''}`;
+    srcEl.className = 'set';
+  } else { srcEl.textContent = 'source: not set'; srcEl.className = 'notset'; }
+  if (_sbDst >= 0) {
+    dstEl.textContent = `dest: node ${_sbDst}${_sbDst === _sbTrainDst ? ' (train)' : ''}`;
+    dstEl.className = 'set';
+  } else { dstEl.textContent = 'dest: not set'; dstEl.className = 'notset'; }
+  obsEl.textContent = `obstacles: ${_sbBlocked.size}`;
+  obsEl.className = _sbBlocked.size ? 'set' : 'notset';
+  document.getElementById('btnRace').disabled = (_sbSrc < 0 || _sbDst < 0);
+}
+
+function sbClearObstacles() {
+  _sbBlocked.clear();
+  renderSandbox();
+  updateSandboxHint();
+}
+
+function sbResetAll() {
+  stopSandboxAnim();
+  _sbBlocked.clear();
+  _sbRaceResult = null;
+  document.getElementById('sbResults').hidden = true;
+  document.getElementById('sbResultsEmpty').hidden = false;
+  sbUseTrainingPair();
+  renderSandbox();
+}
+
+async function runSandboxRace() {
+  if (_sbSrc < 0 || _sbDst < 0) return;
+  document.getElementById('btnRace').disabled = true;
+  stopSandboxAnim();
+  _sbRaceResult = null;
+  hideMsg('sbError');
+  document.getElementById('sbRaceLoading').hidden = false;
+  document.getElementById('sbResults').hidden = true;
+
+  try {
+    const res = await fetch('/sandbox', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        blocked: [..._sbBlocked], src_idx: _sbSrc, dst_idx: _sbDst, cell_id: _sbCellId,
+      }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    _sbRaceResult = JSON.parse(text.replace(/:\s*Infinity\b/g, ': null'));
+
+    _sbGrid = _sbRaceResult.grid;
+    const cv = document.getElementById('cvSandbox');
+    _sbXform = buildSbTransform(_sbGrid.nodes, cv._logW, cv._logH);
+
+    _sbAnimStep = 0;
+    document.getElementById('sbResultsEmpty').hidden = true;
+    renderSandboxResults();
+    startSandboxAnim();
+  } catch (e) {
+    showMsg('sbError', 'Race failed: ' + e.message);
+  } finally {
+    document.getElementById('sbRaceLoading').hidden = true;
+    document.getElementById('btnRace').disabled = (_sbSrc < 0 || _sbDst < 0);
+  }
+}
+
+function startSandboxAnim() {
+  if (!_sbRaceResult) return;
+  const maxSteps = Math.max(
+    (_sbRaceResult.warm.path || []).length,
+    (_sbRaceResult.cold.path || []).length
+  );
+  renderSandbox();
+  _sbAnimTimer = setInterval(() => {
+    _sbAnimStep++;
+    renderSandbox();
+    if (_sbAnimStep >= maxSteps) stopSandboxAnim();
+  }, 90);
+}
+
+function stopSandboxAnim() {
+  if (_sbAnimTimer) { clearInterval(_sbAnimTimer); _sbAnimTimer = null; }
+}
+
+function renderSandboxResults() {
+  if (!_sbRaceResult) return;
+  const w = _sbRaceResult.warm, c = _sbRaceResult.cold, d = _sbRaceResult.dijkstra;
+
+  const reachStr = (reached, hitBudget) => {
+    if (d.structurally_unsolvable) return kv('reach', '⊘ no path exists', 'dim');
+    if (!reached && hitBudget) return kv('reach', '⏱ budget expired', 'bad');
+    return reached ? kv('reach', '✓ reached', 'ok') : kv('reach', '✗ failed', 'bad');
+  };
+
+  document.getElementById('srWarmRow').innerHTML =
+    `${reachStr(w.reached, w.hit_step_budget)} ${kv('steps', w.steps)} ${kv('cost', fmtCost(w.cost))} ${kv('vs opt', fmtRatio(w.cost_ratio_vs_dijkstra))}`;
+  document.getElementById('srColdRow').innerHTML =
+    `${reachStr(c.reached, c.hit_step_budget)} ${kv('steps', c.steps)} ${kv('cost', fmtCost(c.cost))} ${kv('vs opt', fmtRatio(c.cost_ratio_vs_dijkstra))}`;
+  document.getElementById('srDijkRow').innerHTML =
+    `${kv('cost', fmtCost(d.cost))} ${kv('path len', (d.path || []).length)}`;
+  document.getElementById('srLatRow').innerHTML =
+    `Inference — warm ${w.mean_latency_ms != null ? w.mean_latency_ms.toFixed(2) : '—'} ms/step · cold ${c.mean_latency_ms != null ? c.mean_latency_ms.toFixed(2) : '—'} ms/step`;
+
+  document.getElementById('sbResults').hidden = false;
+}
+
+function renderSandbox() {
+  const cv = document.getElementById('cvSandbox');
+  const ctx = cv.getContext('2d');
+  const W = cv._logW, H = cv._logH;
+  ctx.clearRect(0, 0, W, H);
+  if (!_sbGrid || !_sbXform) return;
+
+  const nodes = _sbGrid.nodes;
+  const r = _sbXform.r;
+
+  // edges
+  ctx.save();
+  ctx.strokeStyle = '#1e2a3b';
+  ctx.lineWidth = 0.9;
+  ctx.beginPath();
+  for (const [u, v] of _sbGrid.edges) {
+    if (nodes[u][2] < 0.5 || nodes[v][2] < 0.5) continue;
+    if (_sbBlocked.has(u) || _sbBlocked.has(v)) continue;
+    ctx.moveTo(_sbXform.toX(nodes[u][0]), _sbXform.toY(nodes[u][1]));
+    ctx.lineTo(_sbXform.toX(nodes[v][0]), _sbXform.toY(nodes[v][1]));
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // trails
+  if (_sbRaceResult) {
+    const trail = (path, color) => {
+      const limit = Math.min(_sbAnimStep + 1, path.length);
+      if (limit <= 1) return;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.shadowColor = color; ctx.shadowBlur = 7;
+      ctx.beginPath();
+      ctx.moveTo(_sbXform.toX(nodes[path[0]][0]), _sbXform.toY(nodes[path[0]][1]));
+      for (let i = 1; i < limit; i++) {
+        ctx.lineTo(_sbXform.toX(nodes[path[i]][0]), _sbXform.toY(nodes[path[i]][1]));
+      }
+      ctx.stroke();
+      ctx.restore();
+    };
+    trail(_sbRaceResult.warm.path || [], '#34d399');
+    trail(_sbRaceResult.cold.path || [], '#fb923c');
+  }
+
+  // nodes
+  nodes.forEach(([gx, gy, active], idx) => {
+    const px = _sbXform.toX(gx), py = _sbXform.toY(gy);
+    if (idx === _sbSrc) {
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px, py, r + 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#22d3ee'; ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 10; ctx.fill();
+      ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
+    } else if (idx === _sbDst) {
+      const s = r + 3.2;
+      ctx.save();
+      ctx.translate(px, py); ctx.rotate(Math.PI / 4);
+      ctx.beginPath(); ctx.rect(-s, -s, s * 2, s * 2);
+      ctx.fillStyle = '#e879f9'; ctx.shadowColor = '#e879f9'; ctx.shadowBlur = 10; ctx.fill();
+      ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
+    } else if (_sbBlocked.has(idx)) {
+      ctx.save();
+      ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(px - r, py - r); ctx.lineTo(px + r, py + r);
+      ctx.moveTo(px + r, py - r); ctx.lineTo(px - r, py + r);
+      ctx.stroke();
+      ctx.restore();
+    } else if (active < 0.5) {
+      ctx.beginPath(); ctx.arc(px, py, r * 0.55, 0, Math.PI * 2);
+      ctx.fillStyle = '#29344a'; ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(px, py, r * 0.8, 0, Math.PI * 2);
+      ctx.fillStyle = '#5b6d86'; ctx.fill();
+    }
+  });
+
+  // moving heads
+  if (_sbRaceResult) {
+    const head = (path, color) => {
+      if (!path.length) return;
+      const i = Math.min(_sbAnimStep, path.length - 1);
+      const px = _sbXform.toX(nodes[path[i]][0]);
+      const py = _sbXform.toY(nodes[path[i]][1]);
+      ctx.save();
+      ctx.beginPath(); ctx.arc(px, py, r + 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12; ctx.fill();
+      ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
+    };
+    head(_sbRaceResult.warm.path || [], '#34d399');
+    head(_sbRaceResult.cold.path || [], '#fb923c');
+  }
+}
+
+/* ================================================================
+   Helpers
+   ================================================================ */
+function showMsg(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideMsg(id) { document.getElementById(id).classList.remove('show'); }
+function setLoading(v) {
+  document.getElementById('loadingIndicator').hidden = !v;
+  document.getElementById('btnRun').disabled = v;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,977 @@
+[
+  {
+    "scale": "25x25",
+    "seed": 42,
+    "scenario_id": "seed191664964_s0",
+    "reachable": true,
+    "dijkstra_cost": 58.35977779488426,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 58.3597777949,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 42,
+    "scenario_id": "seed191664964_s1",
+    "reachable": true,
+    "dijkstra_cost": 58.93072245924951,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 58.9307224592,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 42,
+    "scenario_id": "seed191664964_s2",
+    "reachable": true,
+    "dijkstra_cost": 69.13158878672633,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 69.1315887867,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 42,
+    "scenario_id": "seed191664964_s3",
+    "reachable": true,
+    "dijkstra_cost": 22.803324230263954,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 22.8033242303,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 42,
+    "scenario_id": "seed191664964_s4",
+    "reachable": true,
+    "dijkstra_cost": 59.21756260879913,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 59.2175626088,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s0",
+    "reachable": true,
+    "dijkstra_cost": 45.37839323540481,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 45.3783932354,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s1",
+    "reachable": true,
+    "dijkstra_cost": 44.28324812743433,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 44.2832481274,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s2",
+    "reachable": true,
+    "dijkstra_cost": 62.29611864852137,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 62.2961186485,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s3",
+    "reachable": true,
+    "dijkstra_cost": 54.58772800501415,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 54.587728005,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s4",
+    "reachable": true,
+    "dijkstra_cost": 50.57317481683941,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 50.5731748168,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s0",
+    "reachable": true,
+    "dijkstra_cost": 54.32006584490664,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 54.3200658449,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s1",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s2",
+    "reachable": true,
+    "dijkstra_cost": 49.083059400732374,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 49.0830594007,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s3",
+    "reachable": true,
+    "dijkstra_cost": 26.7147728409618,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 26.714772841,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s4",
+    "reachable": true,
+    "dijkstra_cost": 62.8612182952709,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 62.8612182953,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s0",
+    "reachable": true,
+    "dijkstra_cost": 50.352422982956995,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 50.352422983,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s1",
+    "reachable": true,
+    "dijkstra_cost": 43.21958625729446,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 43.2195862573,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s2",
+    "reachable": true,
+    "dijkstra_cost": 58.301764406957936,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 58.301764407,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s3",
+    "reachable": true,
+    "dijkstra_cost": 51.20296454508855,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 51.2029645451,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s4",
+    "reachable": true,
+    "dijkstra_cost": 51.85227054964858,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 51.8522705496,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s0",
+    "reachable": true,
+    "dijkstra_cost": 44.07299659001803,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 44.07299659,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s1",
+    "reachable": true,
+    "dijkstra_cost": 81.84540816443506,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 81.8454081644,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s2",
+    "reachable": true,
+    "dijkstra_cost": 51.795701357446276,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 51.7957013574,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s3",
+    "reachable": true,
+    "dijkstra_cost": 52.9328907785158,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 52.9328907785,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "25x25",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s4",
+    "reachable": true,
+    "dijkstra_cost": 64.61003399409086,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 64.6100339941,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 42,
+    "scenario_id": "seed191664964_s0",
+    "reachable": true,
+    "dijkstra_cost": 66.72867919065835,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 66.72867919065835,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 42,
+    "scenario_id": "seed191664964_s1",
+    "reachable": true,
+    "dijkstra_cost": 56.56343485779666,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 56.56343485779666,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 42,
+    "scenario_id": "seed191664964_s2",
+    "reachable": true,
+    "dijkstra_cost": 54.79796485559005,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 54.79796485559005,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 42,
+    "scenario_id": "seed191664964_s3",
+    "reachable": true,
+    "dijkstra_cost": 51.28783352584724,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 51.28783352584724,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 42,
+    "scenario_id": "seed191664964_s4",
+    "reachable": true,
+    "dijkstra_cost": 55.043989824581104,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 55.043989824581104,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s0",
+    "reachable": true,
+    "dijkstra_cost": 53.57155443838012,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 53.57155443838012,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s1",
+    "reachable": true,
+    "dijkstra_cost": 52.311412115538104,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 52.311412115538104,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s2",
+    "reachable": true,
+    "dijkstra_cost": 59.515751069394156,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 59.515751069394156,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s3",
+    "reachable": true,
+    "dijkstra_cost": 50.02233809178831,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 50.02233809178831,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s4",
+    "reachable": true,
+    "dijkstra_cost": 58.15779545182806,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 58.15779545182806,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s0",
+    "reachable": true,
+    "dijkstra_cost": 62.05520271612268,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 62.05520271612268,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s1",
+    "reachable": true,
+    "dijkstra_cost": 57.14338161528373,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 57.14338161528373,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s2",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s3",
+    "reachable": true,
+    "dijkstra_cost": 54.21308539664738,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 54.21308539664738,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s4",
+    "reachable": true,
+    "dijkstra_cost": 72.27586376552645,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 72.27586376552645,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s0",
+    "reachable": true,
+    "dijkstra_cost": 48.74725801693423,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 48.74725801693423,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s1",
+    "reachable": true,
+    "dijkstra_cost": 46.39396092796405,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 46.39396092796405,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s2",
+    "reachable": true,
+    "dijkstra_cost": 51.32874587815299,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 51.32874587815299,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s3",
+    "reachable": true,
+    "dijkstra_cost": 66.55332921033745,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 66.55332921033745,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s4",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s0",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s1",
+    "reachable": true,
+    "dijkstra_cost": 59.591472983639484,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 59.591472983639484,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s2",
+    "reachable": true,
+    "dijkstra_cost": 72.73387817018641,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 72.73387817018641,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s3",
+    "reachable": true,
+    "dijkstra_cost": 61.84341770092653,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 61.84341770092653,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "50x50",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s4",
+    "reachable": true,
+    "dijkstra_cost": 59.6249900953452,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 59.6249900953452,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 42,
+    "scenario_id": "seed191664964_s0",
+    "reachable": true,
+    "dijkstra_cost": 58.384949958559524,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 58.3849499586,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 42,
+    "scenario_id": "seed191664964_s1",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 42,
+    "scenario_id": "seed191664964_s2",
+    "reachable": true,
+    "dijkstra_cost": 81.07341959100533,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 81.073419591,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 42,
+    "scenario_id": "seed191664964_s3",
+    "reachable": true,
+    "dijkstra_cost": 76.65745212012067,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 76.6574521201,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 42,
+    "scenario_id": "seed191664964_s4",
+    "reachable": true,
+    "dijkstra_cost": 56.2090799639574,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 56.209079964,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s0",
+    "reachable": true,
+    "dijkstra_cost": 69.65981494339768,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 69.6598149434,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s1",
+    "reachable": true,
+    "dijkstra_cost": 67.7113621648714,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 67.7113621649,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s2",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s3",
+    "reachable": true,
+    "dijkstra_cost": 74.85574168658972,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 74.8557416866,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s4",
+    "reachable": true,
+    "dijkstra_cost": 73.05452627735075,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 73.0545262774,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s0",
+    "reachable": true,
+    "dijkstra_cost": 73.08828575997893,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 73.08828576,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s1",
+    "reachable": true,
+    "dijkstra_cost": 68.86320644751807,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 68.8632064475,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s2",
+    "reachable": true,
+    "dijkstra_cost": 80.01751390991143,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 80.0175139099,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s3",
+    "reachable": true,
+    "dijkstra_cost": 41.878575309691925,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 41.8785753097,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s4",
+    "reachable": false,
+    "dijkstra_cost": null,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": null,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s0",
+    "reachable": true,
+    "dijkstra_cost": 70.48681195028114,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 70.4868119503,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s1",
+    "reachable": true,
+    "dijkstra_cost": 62.74626878413123,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 62.7462687841,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s2",
+    "reachable": true,
+    "dijkstra_cost": 70.49684297332148,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 70.4968429733,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s3",
+    "reachable": true,
+    "dijkstra_cost": 65.0111427870926,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 65.0111427871,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s4",
+    "reachable": true,
+    "dijkstra_cost": 74.76544920821435,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 74.7654492082,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s0",
+    "reachable": true,
+    "dijkstra_cost": 68.3861201661165,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 68.3861201661,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s1",
+    "reachable": true,
+    "dijkstra_cost": 44.543162795216496,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 44.5431627952,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s2",
+    "reachable": true,
+    "dijkstra_cost": 68.30629712931058,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 68.3062971293,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s3",
+    "reachable": true,
+    "dijkstra_cost": 69.77443052901776,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 69.774430529,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s4",
+    "reachable": true,
+    "dijkstra_cost": 55.48867665438273,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 55.4886766544,
+    "recon_matches_recorded": true
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 42,
+    "scenario_id": "seed191664964_s1",
+    "reachable": true,
+    "dijkstra_cost": 62.19025061210651,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 62.19025061210652,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": null
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s0",
+    "reachable": true,
+    "dijkstra_cost": 59.20754667663203,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 59.207546676632035,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 69.6598149434
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s1",
+    "reachable": true,
+    "dijkstra_cost": 55.95899414779437,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 55.95899414779438,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 68.8632064475
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s2",
+    "reachable": true,
+    "dijkstra_cost": 54.01232305955913,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 54.01232305955913,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 70.4968429733
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s0",
+    "reachable": true,
+    "dijkstra_cost": 55.335296028956215,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 55.33529602895621,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 68.3861201661
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 42,
+    "scenario_id": "seed191664964_s0",
+    "reachable": true,
+    "dijkstra_cost": 65.78588147580437,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 65.78588147580437,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 58.3849499586
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 42,
+    "scenario_id": "seed191664964_s2",
+    "reachable": true,
+    "dijkstra_cost": 52.40714879051528,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 52.40714879051528,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 81.073419591
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 42,
+    "scenario_id": "seed191664964_s3",
+    "reachable": true,
+    "dijkstra_cost": 60.80754527283782,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 60.80754527283783,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 76.6574521201
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s1",
+    "reachable": true,
+    "dijkstra_cost": 59.000777941667444,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 59.00077794166745,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 67.7113621649
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 1337,
+    "scenario_id": "seed1173222464_s2",
+    "reachable": true,
+    "dijkstra_cost": 66.99982952416961,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 66.99982952416964,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": null
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s2",
+    "reachable": true,
+    "dijkstra_cost": 68.32167532976932,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 68.32167532976932,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 80.0175139099
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 2024,
+    "scenario_id": "seed518677876_s4",
+    "reachable": true,
+    "dijkstra_cost": 50.96516295255294,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 50.965162952552944,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": null
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s3",
+    "reachable": true,
+    "dijkstra_cost": 63.75369634290848,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 63.753696342908476,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 65.0111427871
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 7,
+    "scenario_id": "seed2029167941_s4",
+    "reachable": true,
+    "dijkstra_cost": 61.35194051859888,
+    "warm_strict": false,
+    "recorded_dijkstra_cost": 61.35194051859888,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 74.7654492082
+  },
+  {
+    "scale": "100x100",
+    "tier": "4x_long_train",
+    "seed": 314159,
+    "scenario_id": "seed1830621171_s2",
+    "reachable": true,
+    "dijkstra_cost": 67.20601079536084,
+    "warm_strict": true,
+    "recorded_dijkstra_cost": 67.20601079536084,
+    "recon_matches_recorded": true,
+    "matched_iterations": [
+      40
+    ],
+    "dijkstra_1x_state": 68.3062971293
+  }
+]

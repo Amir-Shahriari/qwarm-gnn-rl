@@ -1,0 +1,51 @@
+{
+  "arms": {
+    "0.5": {
+      "n_cells": 25,
+      "reach": 18,
+      "reach_pct": 0.72,
+      "mcnemar_vs_warm_p": 0.03125,
+      "mcnemar_vs_cold_p": 0.125
+    },
+    "1.0": {
+      "n_cells": 25,
+      "reach": 12,
+      "reach_pct": 0.48,
+      "mcnemar_vs_warm_p": 0.00048828125,
+      "mcnemar_vs_cold_p": 1.0
+    },
+    "2.0": {
+      "n_cells": 25,
+      "reach": 16,
+      "reach_pct": 0.64,
+      "mcnemar_vs_warm_p": 0.0078125,
+      "mcnemar_vs_cold_p": 0.375
+    },
+    "4.0": {
+      "n_cells": 25,
+      "reach": 14,
+      "reach_pct": 0.56,
+      "mcnemar_vs_warm_p": 0.001953125,
+      "mcnemar_vs_cold_p": 1.0
+    },
+    "8.0": {
+      "n_cells": 25,
+      "reach": 15,
+      "reach_pct": 0.6,
+      "mcnemar_vs_warm_p": 0.00390625,
+      "mcnemar_vs_cold_p": 0.7265625
+    }
+  },
+  "best_arm_lambda_shape": 0.5,
+  "best_arm_reach": 18,
+  "warm_reach_reference": 24,
+  "cold_reach_reference": 13,
+  "n_cells_reference": 25,
+  "provenance": {
+    "torch_version": "2.13.0+cpu",
+    "device": "cpu",
+    "platform": "Windows-10-10.0.26200-SP0",
+    "python_version": "3.11.15",
+    "git_tip": "7e87d80ab876b8d4c9b9cafa781aac5ce88cd046"
+  }
+}
