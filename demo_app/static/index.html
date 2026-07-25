@@ -541,6 +541,16 @@
 
     <section class="toolbar">
       <div class="tb-cluster selection">
+        <div class="field">
+          <label for="scaleSelect">Graph scale</label>
+          <select id="scaleSelect" onchange="onScaleChange()"
+                  title="Filter the instance list by grid scale. This only changes which instances are listed, not which scenarios exist or how they run.">
+            <option value="all" selected>All scales</option>
+            <option value="25x25">25×25</option>
+            <option value="50x50">50×50</option>
+          </select>
+        </div>
+
         <div class="field grow">
           <label for="scenSelect">Instance</label>
           <div class="field-row">
@@ -848,6 +858,7 @@ function orderedCells(cells) {
 let _cells      = [];
 let _reach      = null;
 let _scenMode   = 'showcase';       // 'showcase' | 'all'
+let _scaleFilter = 'all';           // 'all' | '25x25' | '50x50' — filters the instance list
 let _animStep   = 0;                // integer step (bound to the slider)
 let _animFrac   = 0;                // 0..1 progress into the next segment
 let _maxStep    = 0;
@@ -914,6 +925,8 @@ async function resetToDefaults() {
   if (_inFlightController) { _inFlightController.abort(); _inFlightController = null; }
   document.getElementById('perturbSelect').value = DEFAULT_PERTURB;
   document.getElementById('oracleSelect').value  = 'full_pool';
+  _scaleFilter = 'all';
+  document.getElementById('scaleSelect').value = 'all';
   setScenarioMode('showcase', true);
   selectCell(DEFAULT_CELL);
   onPerturbChange();
@@ -986,9 +999,23 @@ async function waitForServerReady() {
    Instance selector
    ================================================================ */
 function visibleCells() {
-  return _scenMode === 'showcase'
+  let cs = _scenMode === 'showcase'
     ? _cells.filter(c => SHOWCASE_ORDER.includes(c.cell_id))
     : _cells;
+  if (_scaleFilter !== 'all') cs = cs.filter(c => c.scale === _scaleFilter);
+  return cs;
+}
+
+/* Graph-scale filter — a view over the same instance list, independent of
+   perturbation and scenario. Selecting a scale narrows the Instance dropdown
+   and loads the first instance at that scale. */
+function onScaleChange() {
+  _scaleFilter = document.getElementById('scaleSelect').value;
+  const current = document.getElementById('scenSelect').value;
+  populateSelector();
+  selectCell(current);          // falls back to first visible option if current is filtered out
+  onScenarioChange();
+  runReach();
 }
 
 function optionLabel(c) {
@@ -1102,7 +1129,16 @@ function populateCellsTable() {
       <td>${note}</td>
     `;
     tr.addEventListener('click', () => {
-      if (!visibleCells().some(v => v.cell_id === c.cell_id)) setScenarioMode('all', true);
+      if (!visibleCells().some(v => v.cell_id === c.cell_id)) {
+        // Clicking a row that the current filters hide should still load it:
+        // widen the curation mode and, if needed, the scale filter, then relist.
+        setScenarioMode('all', true);
+        if (_scaleFilter !== 'all' && c.scale !== _scaleFilter) {
+          _scaleFilter = 'all';
+          document.getElementById('scaleSelect').value = 'all';
+        }
+        populateSelector();
+      }
       selectCell(c.cell_id);
       onScenarioChange();
       runReach();
