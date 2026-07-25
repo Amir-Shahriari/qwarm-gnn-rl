@@ -15,6 +15,7 @@ from __future__ import annotations
 import heapq
 import json
 import math
+import os
 import pathlib
 import time
 from contextlib import asynccontextmanager
@@ -98,6 +99,30 @@ def _load_checkpoint(path: pathlib.Path, device: torch.device) -> GNNDQN:
 # ---------------------------------------------------------------------------
 # Graph reconstruction
 # ---------------------------------------------------------------------------
+
+def _warmup_inference(device: torch.device) -> None:
+    """Prime torch kernels and the thread pool with one full encode + decision
+    forward on a throwaway graph, so the first live rollout after startup pays
+    steady-state latency instead of one-time lazy-init cost. Uses a fresh
+    GNNDQN with the node-feature width taken from the adapter itself, so it can
+    never drift from the real feature dimension.
+    """
+    g = DynamicGraph(
+        grid_width=5, grid_height=5, extra_edges=2,
+        deactivate_prob=0.0, node_deactivate_prob=0.0, seed=0,
+    )
+    data = dynamic_graph_to_pyg(g, device=device)
+    agent = GNNDQN(node_in_dim=data.x.shape[1], hidden_dim=128, device=device, seed=0)
+    agent._encoder_raw.eval()
+    agent._q_head_raw.eval()
+    agent.encode(data)
+    node_ids = list(g.nodes.keys())
+    cur = node_ids[0]
+    nbrs = [nb for nb in g.graph.get(cur, {})]
+    if nbrs:
+        for _ in range(8):
+            agent.choose_action(cur, nbrs, node_ids[-1], data, epsilon=0.0)
+
 
 def _rebuild_graph(scale_entry: dict, grid_seed: int) -> DynamicGraph:
     """Reconstruct the post-training graph deterministically from config + seed."""
@@ -631,8 +656,21 @@ async def lifespan(app: FastAPI):
     """
     global _SANDBOX_CELLS
 
+    # Booth inference config: single-threaded torch removes the intra-op thread
+    # dispatch overhead (and its scheduling jitter) that otherwise dominates the
+    # tiny per-decision Q-head forward and inflates tail latency. Startup
+    # precompute stays well under its 20 s budget at one thread. Override with
+    # QWARM_TORCH_THREADS=<n> on a large host if multi-threaded startup matters
+    # more than per-decision tail latency.
+    _n_threads = max(1, int(os.environ.get("QWARM_TORCH_THREADS", "1")))
+    torch.set_num_threads(_n_threads)
+    print(f"[startup] torch intra-op threads: {torch.get_num_threads()}")
+
     device = resolve_device("auto")
     print(f"[startup] Using device: {device}")
+
+    print("[startup] warming up inference kernels...", flush=True)
+    _warmup_inference(device)
 
     if not _MANIFEST_PATH.exists():
         raise RuntimeError(f"[startup] FATAL: manifest.json not found at {_MANIFEST_PATH}")
