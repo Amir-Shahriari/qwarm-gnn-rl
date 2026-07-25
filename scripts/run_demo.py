@@ -57,6 +57,70 @@ def _check_checkpoints() -> None:
     print(f"[run_demo] All checkpoints present ({manifest_path}).")
 
 
+def _run_smoke() -> int:
+    """Boot the app in-process and exercise one instance in each mode.
+
+    Returns 0 if every mode responds cleanly, 1 on the first failure. This is
+    the same coverage as tests/test_demo_smoke.py, wired into the one-command
+    entry point so an operator can validate the booth with
+    `uv run python scripts/run_demo.py --smoke` before opening it. It boots the
+    full app (running the real startup precompute), so it fails loudly on a bad
+    checkpoint, a broken rollout, or any unhandled server error.
+    """
+    from fastapi.testclient import TestClient
+
+    from demo_app.server import app
+
+    print("[smoke] Booting app and running one instance in each mode...")
+    try:
+        with TestClient(app) as client:
+            cells = client.get("/cells").json()
+            if not cells:
+                print("[smoke] FAIL: no cells loaded", file=sys.stderr)
+                return 1
+
+            # Reach mode — one instance per scale.
+            by_scale = {}
+            for c in cells:
+                by_scale.setdefault(c["scale"], c)
+            for scale, cell in by_scale.items():
+                r = client.post("/reach", json={"cell_id": cell["cell_id"], "perturb_multiplier": 1.0})
+                if r.status_code != 200 or "warm" not in r.json():
+                    print(f"[smoke] FAIL: reach {scale} -> {r.status_code} {r.text[:200]}", file=sys.stderr)
+                    return 1
+            print(f"[smoke] reach OK ({', '.join(sorted(by_scale))})")
+
+            # Oracle-source mode — one solvable 25x25 instance, all three arms.
+            oracle_cell = next((c for c in cells if c["scale"] == "25x25" and c["oracle_available"]), None)
+            if oracle_cell is None:
+                print("[smoke] FAIL: no oracle-available 25x25 cell", file=sys.stderr)
+                return 1
+            for arm in ("full_pool", "classical_only", "quantum_only"):
+                r = client.post("/oracle_reach", json={"cell_id": oracle_cell["cell_id"], "oracle_arm": arm})
+                if r.status_code != 200 or "warm" not in r.json():
+                    print(f"[smoke] FAIL: oracle {arm} -> {r.status_code} {r.text[:200]}", file=sys.stderr)
+                    return 1
+            print("[smoke] oracle-source OK (full_pool, classical_only, quantum_only)")
+
+            # Sandbox mode — training pair on the first scenario.
+            scenarios = client.get("/sandbox/scenarios").json()
+            grid = client.get(f"/sandbox/grid?cell_id={scenarios[0]['cell_id']}").json()
+            r = client.post("/sandbox", json={
+                "blocked": [], "src_idx": grid["train_src_idx"],
+                "dst_idx": grid["train_dst_idx"], "cell_id": scenarios[0]["cell_id"],
+            })
+            if r.status_code != 200 or "warm" not in r.json():
+                print(f"[smoke] FAIL: sandbox -> {r.status_code} {r.text[:200]}", file=sys.stderr)
+                return 1
+            print("[smoke] sandbox OK")
+    except Exception as e:  # noqa: BLE001 — smoke check reports any failure loudly
+        print(f"[smoke] FAIL: {type(e).__name__}: {e}", file=sys.stderr)
+        return 1
+
+    print("[smoke] ALL MODES PASSED")
+    return 0
+
+
 def _open_browser_when_ready(url: str, timeout_s: float = 30.0) -> None:
     import urllib.request
 
@@ -75,10 +139,17 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument(
+        "--smoke", action="store_true",
+        help="Boot the app, run one instance in each mode, and exit nonzero on any error.",
+    )
     args = parser.parse_args()
 
     _check_deps()
     _check_checkpoints()
+
+    if args.smoke:
+        sys.exit(_run_smoke())
 
     import uvicorn
 
