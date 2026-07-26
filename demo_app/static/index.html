@@ -34,10 +34,14 @@
     --fail:       #f87171;
     --warn:       #fbbf24;
 
-    /* agent identity */
-    --warm:       #34d399;
-    --cold:       #fb923c;
-    --dijk:       #60a5fa;
+    /* agent identity — Okabe-Ito colorblind-safe triad.
+       Distinguishable under deuteranopia/protanopia; paths also carry a
+       redundant line style (warm solid, cold dashed, Dijkstra dotted) and
+       head shape (warm circle, cold square) so the demo reads correctly in
+       greyscale and for any colour-vision deficiency. */
+    --warm:       #009e73;   /* bluish-green */
+    --cold:       #d55e00;   /* vermillion   */
+    --dijk:       #0072b2;   /* blue         */
 
     /* graph palette */
     --n-start:    #22d3ee;
@@ -243,14 +247,16 @@
     background: var(--stat-accent, var(--line)); opacity: .9;
   }
   .stat-k {
-    font-size: 10px; font-weight: 650; letter-spacing: .09em;
-    text-transform: uppercase; color: var(--text-faint);
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-dim);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .stat-v {
     font-family: var(--font-mono);
-    font-size: clamp(22px, 2.1vw, 30px);
-    font-weight: 600; line-height: 1.15; letter-spacing: -.02em;
+    /* Larger than the surrounding UI so the headline reach/gap/latency numbers
+       stay legible from ~2 m at a conference booth. */
+    font-size: clamp(26px, 2.4vw, 34px);
+    font-weight: 650; line-height: 1.15; letter-spacing: -.02em;
     color: var(--text);
     font-variant-numeric: tabular-nums;
   }
@@ -280,6 +286,8 @@
   .lg i { display: inline-block; flex: none; }
   .lg i.line  { width: 20px; height: 3px; border-radius: 2px; background: var(--c); }
   .lg i.dash  { width: 20px; height: 0; border-top: 3px dashed var(--c); }
+  .lg i.dotln { width: 20px; height: 0; border-top: 3px dotted var(--c); }
+  .lg i.sq    { width: 10px; height: 10px; background: var(--c); box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
   .lg i.dot   { width: 11px; height: 11px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
   .lg i.diam  { width: 11px; height: 11px; background: var(--c); transform: rotate(45deg); box-shadow: 0 0 0 1.5px rgba(255,255,255,.75); }
   /* the "deactivated" swatch is deliberately dark on canvas; ring it so the
@@ -326,7 +334,7 @@
   }
   .badge.reached    { background: rgba(52,211,153,.14); color: var(--ok);   border-color: rgba(52,211,153,.35); }
   .badge.failed     { background: rgba(248,113,113,.14); color: var(--fail); border-color: rgba(248,113,113,.35); }
-  .badge.optimal    { background: rgba(96,165,250,.14); color: var(--dijk); border-color: rgba(96,165,250,.35); }
+  .badge.optimal    { background: rgba(0,114,178,.18); color: #4ea3d6; border-color: rgba(0,114,178,.5); }
   .badge.unsolvable { background: rgba(148,165,186,.14); color: var(--text-dim); border-color: rgba(148,165,186,.3); }
   .badge.idle       { background: var(--surface-3); color: var(--text-faint); border-color: var(--line); }
 
@@ -694,9 +702,9 @@
     <!-- ── Legend ── -->
     <section class="legend">
       <span class="legend-title">Legend</span>
-      <span class="lg"><i class="line" style="--c: var(--warm);"></i>Warm path</span>
-      <span class="lg"><i class="line" style="--c: var(--cold);"></i>Cold path</span>
-      <span class="lg"><i class="dash" style="--c: var(--dijk);"></i>Dijkstra optimal</span>
+      <span class="lg"><i class="line"  style="--c: var(--warm);"></i>Warm path (solid)</span>
+      <span class="lg"><i class="dash"  style="--c: var(--cold);"></i>Cold path (dashed)</span>
+      <span class="lg"><i class="dotln" style="--c: var(--dijk);"></i>Dijkstra optimal (dotted)</span>
       <span class="lg"><i class="dot"  style="--c: var(--n-start);"></i>Start</span>
       <span class="lg"><i class="diam" style="--c: var(--n-goal);"></i>Goal</span>
       <span class="lg"><i class="node" style="--c: var(--n-active);"></i>Active node</span>
@@ -1262,11 +1270,72 @@ function nodeXY(idx) {
 /* ================================================================
    Render
    ================================================================ */
+/* Palette — single source of truth is the CSS custom properties in <head>,
+   read once so a palette change only ever touches CSS. */
+let _COL = null;
+function COL() {
+  if (!_COL) {
+    const s = getComputedStyle(document.documentElement);
+    const g = (n, fb) => (s.getPropertyValue(n).trim() || fb);
+    _COL = {
+      warm:  g('--warm', '#009e73'),
+      cold:  g('--cold', '#d55e00'),
+      dijk:  g('--dijk', '#56b4e9'),
+      start: g('--n-start', '#22d3ee'),
+      goal:  g('--n-goal', '#e879f9'),
+      fail:  g('--fail', '#f87171'),
+    };
+  }
+  return _COL;
+}
+/* Redundant line styles so warm/cold/Dijkstra stay distinct without colour
+   (colour-vision deficiency, greyscale printout). */
+const COLD_DASH = [11, 7];   // cold path — dashed
+const DIJK_DOT  = [2, 7];    // Dijkstra path — dotted (round cap → dots)
+
 function renderAll() {
   if (!_reach || !_transform) return;
-  renderCanvas('cvWarm', _reach.warm, 'var-warm', '#34d399', false);
-  renderCanvas('cvCold', _reach.cold, 'var-cold', '#fb923c', false);
-  renderCanvas('cvDijk', null,        'var-dijk', '#60a5fa', true);
+  renderCanvas('cvWarm', _reach.warm, COL().warm, false, null,      'circle');
+  renderCanvas('cvCold', _reach.cold, COL().cold, false, COLD_DASH, 'square');
+  renderCanvas('cvDijk', null,        COL().dijk, true,  DIJK_DOT,  null);
+}
+
+/* A path head marked by shape as well as colour: warm = circle, cold = square. */
+function drawHead(ctx, x, y, radius, color, shape, stuck) {
+  ctx.save();
+  if (stuck) {
+    // Dead end: a bold halo + × that reads even in greyscale, so the single
+    // step the demo exists to show is unmistakable while scrubbing.
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(248,113,113,0.22)';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.beginPath();
+  const fill = stuck ? COL().fail : color;
+  if (shape === 'square') {
+    const s = radius + 2.2;
+    ctx.rect(x - s, y - s, s * 2, s * 2);
+  } else {
+    ctx.arc(x, y, radius + 2.4, 0, Math.PI * 2);
+  }
+  ctx.fillStyle = fill;
+  ctx.shadowColor = fill; ctx.shadowBlur = stuck ? 16 : 12;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.4; ctx.stroke();
+  if (stuck) {
+    const k = radius + 1.6;
+    ctx.strokeStyle = '#0a0e14'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - k, y - k); ctx.lineTo(x + k, y + k);
+    ctx.moveTo(x + k, y - k); ctx.lineTo(x - k, y + k);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 /* Draw a polyline over `path`, advanced to (upTo + frac) of the way along. */
@@ -1312,7 +1381,7 @@ function headXY(path, upTo, frac) {
   return [ax, ay];
 }
 
-function renderCanvas(canvasId, agent, _tag, pathColor, isDijkstra) {
+function renderCanvas(canvasId, agent, pathColor, isDijkstra, pathDash, headShape) {
   const cv = document.getElementById(canvasId);
   const ctx = cv.getContext('2d');
   const W = cv._logW, H = cv._logH;
@@ -1354,18 +1423,20 @@ function renderCanvas(canvasId, agent, _tag, pathColor, isDijkstra) {
     ctx.fill();
   }
 
-  // ── Dijkstra optimal reference — dashed underlay on every panel ──
+  // ── Dijkstra optimal reference — dotted underlay on every panel ──
   const dijkPath = _reach.dijkstra.path || [];
+  ctx.save();
+  if (!isDijkstra) ctx.globalAlpha = 0.62;   // faint reference underlay, still visible on dark
   strokePath(ctx, dijkPath, dijkPath.length - 1, 0,
-             isDijkstra ? '#60a5fa' : 'rgba(96,165,250,0.42)',
-             isDijkstra ? 2.6 : 1.6, [6, 5], isDijkstra);
+             COL().dijk, isDijkstra ? 3.0 : 2.0, DIJK_DOT, isDijkstra);
+  ctx.restore();
 
   // ── agent path + visited trail ──
   if (!isDijkstra && agent) {
     const path = agent.path || [];
     const upTo = Math.min(_animStep, Math.max(0, path.length - 1));
 
-    strokePath(ctx, path, upTo, _animFrac, pathColor, 2.8, null, true);
+    strokePath(ctx, path, upTo, _animFrac, pathColor, 2.8, pathDash, true);
 
     // visited nodes along the traversed prefix
     ctx.save();
@@ -1386,8 +1457,8 @@ function renderCanvas(canvasId, agent, _tag, pathColor, isDijkstra) {
     ctx.save();
     ctx.beginPath();
     ctx.arc(px, py, r + 3.2, 0, Math.PI * 2);
-    ctx.fillStyle = '#22d3ee';
-    ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 10;
+    ctx.fillStyle = COL().start;
+    ctx.shadowColor = COL().start; ctx.shadowBlur = 10;
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.4; ctx.stroke();
@@ -1400,8 +1471,8 @@ function renderCanvas(canvasId, agent, _tag, pathColor, isDijkstra) {
     ctx.translate(px, py); ctx.rotate(Math.PI / 4);
     ctx.beginPath();
     ctx.rect(-s, -s, s * 2, s * 2);
-    ctx.fillStyle = '#e879f9';
-    ctx.shadowColor = '#e879f9'; ctx.shadowBlur = 10;
+    ctx.fillStyle = COL().goal;
+    ctx.shadowColor = COL().goal; ctx.shadowBlur = 10;
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.4; ctx.stroke();
@@ -1416,26 +1487,7 @@ function renderCanvas(canvasId, agent, _tag, pathColor, isDijkstra) {
     if (head) {
       const atEnd = upTo >= path.length - 1;
       const stuck = atEnd && !agent.reached;
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(head[0], head[1], r + 2.4, 0, Math.PI * 2);
-      ctx.fillStyle = stuck ? '#f87171' : pathColor;
-      ctx.shadowColor = stuck ? '#f87171' : pathColor;
-      ctx.shadowBlur = 12;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(255,255,255,.85)';
-      ctx.lineWidth = 1.4;
-      ctx.stroke();
-      if (stuck) {                       // honest dead-end marker
-        const k = r + 1.2;
-        ctx.strokeStyle = '#0a0e14'; ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.moveTo(head[0] - k, head[1] - k); ctx.lineTo(head[0] + k, head[1] + k);
-        ctx.moveTo(head[0] + k, head[1] - k); ctx.lineTo(head[0] - k, head[1] + k);
-        ctx.stroke();
-      }
-      ctx.restore();
+      drawHead(ctx, head[0], head[1], r, pathColor, headShape, stuck);
     }
   }
 }
@@ -1936,15 +1988,17 @@ function renderSandbox() {
   ctx.stroke();
   ctx.restore();
 
-  // trails
+  // trails — warm solid, cold dashed (same redundant encoding as reach mode,
+  // essential here since both share one canvas).
   if (_sbRaceResult) {
-    const trail = (path, color) => {
+    const trail = (path, color, dash) => {
       const limit = Math.min(_sbAnimStep + 1, path.length);
       if (limit <= 1) return;
       ctx.save();
       ctx.strokeStyle = color;
       ctx.lineWidth = 3;
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      if (dash) ctx.setLineDash(dash);
       ctx.shadowColor = color; ctx.shadowBlur = 7;
       ctx.beginPath();
       ctx.moveTo(_sbXform.toX(nodes[path[0]][0]), _sbXform.toY(nodes[path[0]][1]));
@@ -1954,8 +2008,8 @@ function renderSandbox() {
       ctx.stroke();
       ctx.restore();
     };
-    trail(_sbRaceResult.warm.path || [], '#34d399');
-    trail(_sbRaceResult.cold.path || [], '#fb923c');
+    trail(_sbRaceResult.warm.path || [], COL().warm, null);
+    trail(_sbRaceResult.cold.path || [], COL().cold, COLD_DASH);
   }
 
   // nodes
@@ -1964,7 +2018,7 @@ function renderSandbox() {
     if (idx === _sbSrc) {
       ctx.save();
       ctx.beginPath(); ctx.arc(px, py, r + 3, 0, Math.PI * 2);
-      ctx.fillStyle = '#22d3ee'; ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 10; ctx.fill();
+      ctx.fillStyle = COL().start; ctx.shadowColor = COL().start; ctx.shadowBlur = 10; ctx.fill();
       ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.restore();
     } else if (idx === _sbDst) {
@@ -1972,12 +2026,12 @@ function renderSandbox() {
       ctx.save();
       ctx.translate(px, py); ctx.rotate(Math.PI / 4);
       ctx.beginPath(); ctx.rect(-s, -s, s * 2, s * 2);
-      ctx.fillStyle = '#e879f9'; ctx.shadowColor = '#e879f9'; ctx.shadowBlur = 10; ctx.fill();
+      ctx.fillStyle = COL().goal; ctx.shadowColor = COL().goal; ctx.shadowBlur = 10; ctx.fill();
       ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1.5; ctx.stroke();
       ctx.restore();
     } else if (_sbBlocked.has(idx)) {
       ctx.save();
-      ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.strokeStyle = COL().fail; ctx.lineWidth = 2; ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(px - r, py - r); ctx.lineTo(px + r, py + r);
       ctx.moveTo(px + r, py - r); ctx.lineTo(px - r, py + r);
@@ -1992,21 +2046,19 @@ function renderSandbox() {
     }
   });
 
-  // moving heads
+  // moving heads — warm circle, cold square; dead end marked with a halo + ×.
   if (_sbRaceResult) {
-    const head = (path, color) => {
+    const head = (agent, color, shape) => {
+      const path = agent.path || [];
       if (!path.length) return;
       const i = Math.min(_sbAnimStep, path.length - 1);
       const px = _sbXform.toX(nodes[path[i]][0]);
       const py = _sbXform.toY(nodes[path[i]][1]);
-      ctx.save();
-      ctx.beginPath(); ctx.arc(px, py, r + 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 12; ctx.fill();
-      ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.restore();
+      const stuck = i >= path.length - 1 && !agent.reached;
+      drawHead(ctx, px, py, r, color, shape, stuck);
     };
-    head(_sbRaceResult.warm.path || [], '#34d399');
-    head(_sbRaceResult.cold.path || [], '#fb923c');
+    head(_sbRaceResult.warm, COL().warm, 'circle');
+    head(_sbRaceResult.cold, COL().cold, 'square');
   }
 }
 
