@@ -121,18 +121,27 @@ def _run_smoke() -> int:
     return 0
 
 
-def _open_browser_when_ready(url: str, timeout_s: float = 30.0) -> None:
+def _announce_ready_when_up(url: str, open_browser: bool, timeout_s: float = 90.0) -> None:
+    """Wait until the server actually accepts connections, then print a clear
+    'Ready' line (and open the browser if requested).
+
+    The server does not accept connections until the startup precompute finishes,
+    so polling here guarantees we never open the browser onto a connection error,
+    and the 'Ready' line only appears once the URL genuinely works.
+    """
     import urllib.request
 
     deadline = time.time() + timeout_s
     while time.time() < deadline:
         try:
             urllib.request.urlopen(url, timeout=1)
-            webbrowser.open(url)
+            print(f"\n[run_demo] Ready - open {url}\n", flush=True)
+            if open_browser:
+                webbrowser.open(url)
             return
         except Exception:
             time.sleep(0.5)
-    print(f"[run_demo] Server did not become ready within {timeout_s}s; open {url} manually.")
+    print(f"[run_demo] Server did not become ready within {timeout_s}s; open {url} manually.", flush=True)
 
 
 def main() -> None:
@@ -154,10 +163,15 @@ def main() -> None:
     import uvicorn
 
     url = f"http://127.0.0.1:{args.port}"
-    if not args.no_browser:
-        threading.Thread(target=_open_browser_when_ready, args=(url,), daemon=True).start()
+    # Always announce readiness in the terminal (even with --no-browser); open the
+    # browser only when asked, and only after the server actually accepts requests.
+    threading.Thread(
+        target=_announce_ready_when_up, args=(url, not args.no_browser), daemon=True
+    ).start()
 
-    print(f"[run_demo] Starting server at {url} ...")
+    print("[run_demo] Starting server; precomputing evaluated scenarios (~10-20 s on a CPU-only machine).")
+    print(f"[run_demo] Please WAIT for the 'Ready' line below before opening {url}.")
+    print("[run_demo] The server does not accept connections until precompute finishes.", flush=True)
     uvicorn.run("demo_app.server:app", host="127.0.0.1", port=args.port, reload=False)
 
 

@@ -681,9 +681,11 @@ async def lifespan(app: FastAPI):
         for scale_key, scale_entry in manifest.items()
         for sc_idx, scenario in enumerate(scale_entry["scenarios"])
     ]
-    print(f"[startup] Loading {len(jobs)} scenarios across {len(manifest)} scales...")
+    n_jobs = len(jobs)
+    print(f"[startup] Loading {n_jobs} scenarios across {len(manifest)} scales...")
 
-    for job in jobs:
+    for i, job in enumerate(jobs, 1):
+        print(f"[startup] Precomputing evaluated scenarios ({i}/{n_jobs})...", flush=True)
         r = _load_one_scenario(*job, device=device)
         if r is None:
             continue
