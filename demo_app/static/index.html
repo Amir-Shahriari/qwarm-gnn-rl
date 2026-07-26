@@ -2016,7 +2016,8 @@ function updateSandboxHint() {
   } else { dstEl.textContent = 'dest: not set'; dstEl.className = 'notset'; }
   obsEl.textContent = `obstacles: ${_sbBlocked.size}`;
   obsEl.className = _sbBlocked.size ? 'set' : 'notset';
-  document.getElementById('btnRace').disabled = (_sbSrc < 0 || _sbDst < 0);
+  // Never re-enable Race while a run is in flight (grid edits call this too).
+  document.getElementById('btnRace').disabled = (_sbSrc < 0 || _sbDst < 0) || _sbRacing;
 }
 
 function sbClearObstacles() {
@@ -2035,10 +2036,28 @@ function sbResetAll() {
   renderSandbox();
 }
 
+let _sbRacing = false;
+let _raceIdleTimer = null;
+
+/* Return the Race button to its idle state, enabled only if a valid pair is set.
+   Centralised so the button can never get stuck disabled after a run. */
+function sbSetRaceIdle() {
+  _sbRacing = false;
+  if (_raceIdleTimer) { clearTimeout(_raceIdleTimer); _raceIdleTimer = null; }
+  const btn = document.getElementById('btnRace');
+  btn.textContent = '▶ Race';
+  btn.disabled = (_sbSrc < 0 || _sbDst < 0);
+}
+
 async function runSandboxRace() {
-  if (_sbSrc < 0 || _sbDst < 0) return;
-  document.getElementById('btnRace').disabled = true;
-  stopSandboxAnim();
+  if (_sbSrc < 0 || _sbDst < 0 || _sbRacing) return;   // guard blocks rapid double-fire
+  stopSandboxAnim();                                    // interrupt any prior trajectory animation
+  _sbRacing = true;
+  if (_raceIdleTimer) { clearTimeout(_raceIdleTimer); _raceIdleTimer = null; }
+  const startAt = performance.now();
+  const btn = document.getElementById('btnRace');
+  btn.disabled = true;
+  btn.textContent = 'Racing…';
   _sbRaceResult = null;
   hideMsg('sbError');
   document.getElementById('sbRaceLoading').hidden = false;
@@ -2062,12 +2081,17 @@ async function runSandboxRace() {
     _sbAnimStep = 0;
     document.getElementById('sbResultsEmpty').hidden = true;
     renderSandboxResults();
+    document.getElementById('sbRaceLoading').hidden = true;
     startSandboxAnim();
+    // Hold the running state for a perceptible minimum (the compute itself is
+    // sub-ms), then re-enable even while the trajectory animation keeps drawing.
+    // A fresh Race interrupts the animation via stopSandboxAnim() above.
+    const remain = Math.max(0, 600 - (performance.now() - startAt));
+    _raceIdleTimer = setTimeout(sbSetRaceIdle, remain);
   } catch (e) {
     showMsg('sbError', 'Race failed: ' + e.message);
-  } finally {
     document.getElementById('sbRaceLoading').hidden = true;
-    document.getElementById('btnRace').disabled = (_sbSrc < 0 || _sbDst < 0);
+    sbSetRaceIdle();
   }
 }
 
@@ -2218,9 +2242,21 @@ function showMsg(id, msg) {
   el.classList.add('show');
 }
 function hideMsg(id) { document.getElementById(id).classList.remove('show'); }
+/* Reach "Load" feedback with a minimum-visible floor: a cached load returns in a
+   few ms, so without a floor the disabled/spinner state would flash invisibly.
+   The result still renders immediately; only the spinner/disabled state lingers. */
+let _loadShownAt = 0, _loadHideTimer = null;
 function setLoading(v) {
-  document.getElementById('loadingIndicator').hidden = !v;
-  document.getElementById('btnRun').disabled = v;
+  const ind = document.getElementById('loadingIndicator');
+  const btn = document.getElementById('btnRun');
+  if (v) {
+    if (_loadHideTimer) { clearTimeout(_loadHideTimer); _loadHideTimer = null; }
+    ind.hidden = false; btn.disabled = true; _loadShownAt = performance.now();
+  } else {
+    const remain = 350 - (performance.now() - _loadShownAt);
+    const hide = () => { ind.hidden = true; btn.disabled = false; _loadHideTimer = null; };
+    if (remain > 0) { _loadHideTimer = setTimeout(hide, remain); } else hide();
+  }
 }
 </script>
 </body>
