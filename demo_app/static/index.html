@@ -465,6 +465,58 @@
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  /* ═══════════════════════ MODE / GUIDED ═══════════════════════ */
+  .subnav { display: flex; gap: var(--sp-1); margin-bottom: var(--sp-4); }
+
+  /* Persistent, always-visible reminder that warm and cold share one graph —
+     the single most important thing an attendee must understand. */
+  .same-graph-bar {
+    display: flex; align-items: center; gap: 11px;
+    background: linear-gradient(90deg, var(--accent-dim), transparent 72%), var(--surface);
+    border: 1px solid rgba(76,141,255,.30); border-left: 3px solid var(--accent);
+    border-radius: var(--r-md); padding: 11px var(--sp-4);
+    font-size: 13.5px; color: var(--text);
+  }
+  .same-graph-bar .sg-ico { font-size: 19px; color: var(--accent); flex: none; line-height: 1; }
+
+  #guidedBar {
+    display: none; align-items: center; gap: var(--sp-4); flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4);
+  }
+  #guidedBar .gb-left { display: flex; align-items: center; gap: var(--sp-3); }
+  #guidedBar .gb-step { font-size: 12px; font-weight: 650; color: var(--text-dim); white-space: nowrap; }
+  #guidedBar .gb-why  { flex: 1 1 240px; font-size: 12.5px; color: var(--text-dim); }
+  #guidedBar .gb-explore { margin-left: auto; }
+
+  /* Mode visibility: guided hides the full control surface and the raw table,
+     leaving the warm-vs-cold comparison itself. Explore reveals everything. */
+  body[data-mode="guided"] #guidedBar { display: flex; }
+  body[data-mode="guided"] .tb-cluster.selection { display: none; }
+  body[data-mode="guided"] .toolbar { grid-template-columns: 1fr; }
+  body[data-mode="guided"] #reachTableSection,
+  body[data-mode="guided"] #reachOodNote { display: none !important; }
+
+  /* Reach status is the dominant per-agent signal — bump the panel badge. */
+  .panel-head .badge { font-size: 12px; padding: 4px 12px; letter-spacing: .06em; }
+
+  #introOverlay {
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(10,14,20,.90);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center; padding: var(--sp-5);
+  }
+  .intro-card {
+    max-width: 540px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-lg); padding: var(--sp-5); box-shadow: 0 20px 60px rgba(0,0,0,.55);
+  }
+  .intro-h { font-size: 20px; font-weight: 650; letter-spacing: -.01em; margin-bottom: var(--sp-3); }
+  .intro-list { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: var(--sp-4); font-size: 14px; }
+  .intro-list li { padding-left: 20px; position: relative; }
+  .intro-list li::before { content: '›'; position: absolute; left: 2px; color: var(--accent); font-weight: 800; }
+  .intro-why { font-size: 13px; color: var(--text-dim); background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: var(--r-md); padding: 11px var(--sp-3); margin-bottom: var(--sp-4); }
+  .intro-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; }
+
   /* ═══════════════════════ SANDBOX ═══════════════════════ */
   .sb-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--sp-4); align-items: start; }
   @media (max-width: 1080px) { .sb-grid { grid-template-columns: minmax(0,1fr); } }
@@ -520,12 +572,12 @@
   }
 </style>
 </head>
-<body>
+<body data-mode="guided">
 
 <div id="startupOverlay">
   <div class="spinner" style="width:22px;height:22px;border-width:3px;"></div>
-  <div class="so-title">Precomputing scenarios</div>
-  <div class="so-sub">Loading demo checkpoints and running every rollout once…</div>
+  <div class="so-title">Precomputing evaluated scenarios…</div>
+  <div class="so-sub">Loading demo checkpoints and running every rollout once. This happens once at startup.</div>
   <div class="so-el" id="startupElapsed">0s</div>
 </div>
 
@@ -535,17 +587,60 @@
       <h1>GNN-DQN Warm-Start Pathfinding</h1>
       <span class="venue">ICDM 2026 Demo</span>
     </div>
-    <nav class="nav">
-      <button class="nav-btn active" data-tab="reach"   onclick="switchTab('reach')">Reach</button>
-      <button class="nav-btn"        data-tab="sandbox" onclick="switchTab('sandbox')">Sandbox</button>
+    <nav class="nav" aria-label="View mode">
+      <button class="nav-btn active" id="modeGuided" onclick="setMode('guided')"
+              title="A guided walkthrough of the warm-versus-cold comparison.">Guided tour</button>
+      <button class="nav-btn"        id="modeExplore" onclick="setMode('explore')"
+              title="Full controls: graph scale, perturbation, scenario, oracle source, and the sandbox.">Explore ▸</button>
     </nav>
   </div>
 </header>
 
+<div id="introOverlay" hidden>
+  <div class="intro-card">
+    <div class="intro-h">Two agents, one graph</div>
+    <ul class="intro-list">
+      <li><strong>Warm agent</strong> — trained with expert demonstrations.</li>
+      <li><strong>Cold agent</strong> — trained from scratch, otherwise identical.</li>
+      <li>Both run on the <strong>same graph</strong> under the <strong>same conditions</strong>.</li>
+      <li>The only difference is whether expert demonstrations were available during training.</li>
+    </ul>
+    <div class="intro-why">
+      This is live: you choose the problem and watch the trained policies respond,
+      instead of reading one aggregate number from a table.
+    </div>
+    <div class="intro-actions">
+      <button class="btn primary" onclick="dismissIntro(false)">Start</button>
+      <button class="btn ghost"   onclick="dismissIntro(true)">Don't show again</button>
+    </div>
+  </div>
+</div>
+
 <main>
+
+  <div class="subnav" id="subNav" hidden>
+    <button class="nav-btn active" data-tab="reach"   onclick="switchTab('reach')">Reach</button>
+    <button class="nav-btn"        data-tab="sandbox" onclick="switchTab('sandbox')">Sandbox</button>
+  </div>
+
+  <!-- Persistent across both modes and both sub-tabs — never off screen. -->
+  <div class="same-graph-bar" id="sameGraphBar" style="margin-bottom: var(--sp-4);">
+    <span class="sg-ico" aria-hidden="true">⇄</span>
+    <span><strong>Same graph, same perturbation.</strong> Warm and cold race the identical map under
+    identical conditions — the only difference is whether expert demonstrations were available during training.</span>
+  </div>
 
   <!-- ═══════════════════════  REACH TAB  ═══════════════════════ -->
   <div class="tab-pane active stack" id="tab-reach">
+
+    <div id="guidedBar">
+      <div class="gb-left">
+        <span class="gb-step" id="guidedScenLabel">Scenario 1</span>
+        <button class="btn" onclick="guidedNextScenario()">Try another scenario ↻</button>
+      </div>
+      <div class="gb-why">You choose the problem and watch the trained policies respond live — not a fixed figure.</div>
+      <button class="btn ghost gb-explore" onclick="setMode('explore')">Explore full controls ▸</button>
+    </div>
 
     <section class="toolbar">
       <div class="tb-cluster selection">
@@ -713,7 +808,7 @@
     </section>
 
     <!-- ── All scenarios ── -->
-    <section>
+    <section id="reachTableSection">
       <div class="section-head">
         <span class="section-title">All Scenarios</span>
         <span class="section-note">
@@ -942,13 +1037,62 @@ async function resetToDefaults() {
 }
 
 /* ================================================================
-   Tabs
+   Mode (guided | explore) and sub-tabs (reach | sandbox)
    ================================================================ */
+let _uiMode    = 'guided';
+let _guidedIdx = 0;                       // index into SHOWCASE_ORDER for guided cycling
+let _booted    = false;
+
+function setMode(mode) {
+  _uiMode = mode;
+  document.body.setAttribute('data-mode', mode);
+  document.getElementById('modeGuided').classList.toggle('active', mode === 'guided');
+  document.getElementById('modeExplore').classList.toggle('active', mode === 'explore');
+  const subNav = document.getElementById('subNav');
+  if (mode === 'explore') {
+    subNav.hidden = false;
+  } else {
+    // Guided: reach-only, training-level, curated scenarios.
+    subNav.hidden = true;
+    switchTab('reach');
+    const wasOod = document.getElementById('perturbSelect').value !== '1.0';
+    document.getElementById('perturbSelect').value = '1.0';
+    document.getElementById('reachOodNote').classList.remove('show');
+    // If we came from an OOD run in explore mode, reload at training level so
+    // guided never shows off-training numbers. Skipped during boot (the boot
+    // sequence runs reach itself right after).
+    if (_booted && wasOod) { invalidateRun(); runReach(); }
+  }
+  onLayoutResize();
+}
+
+function guidedNextScenario() {
+  _guidedIdx = (_guidedIdx + 1) % SHOWCASE_ORDER.length;
+  const cid = SHOWCASE_ORDER[_guidedIdx];
+  _scaleFilter = 'all';
+  document.getElementById('scaleSelect').value = 'all';
+  setScenarioMode('showcase', true);
+  selectCell(cid);
+  onScenarioChange();
+  document.getElementById('guidedScenLabel').textContent =
+    `Scenario ${_guidedIdx + 1} of ${SHOWCASE_ORDER.length}`;
+  runReach();
+}
+
+function showIntroIfFirstRun() {
+  try { if (localStorage.getItem('qwarm_intro_dismissed') === '1') return; } catch (e) { /* private mode */ }
+  document.getElementById('introOverlay').hidden = false;
+}
+function dismissIntro(persist) {
+  document.getElementById('introOverlay').hidden = true;
+  if (persist) { try { localStorage.setItem('qwarm_intro_dismissed', '1'); } catch (e) { /* ignore */ } }
+}
+
 function switchTab(name) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#subNav .nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  const btn = document.querySelector(`.nav-btn[data-tab="${name}"]`);
+  const btn = document.querySelector(`#subNav .nav-btn[data-tab="${name}"]`);
   if (btn) btn.classList.add('active');
   if (name === 'sandbox') activateSandboxTab();
   onLayoutResize();
@@ -969,9 +1113,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   await waitForServerReady();
   document.getElementById('startupOverlay').style.display = 'none';
-  // Open directly on the curated default so the first thing on screen is a
-  // real, paper-conditions result rather than an empty grid.
+  // Default to the guided experience, then open directly on the curated default
+  // so the first thing on screen is a real, paper-conditions result.
+  setMode('guided');
   await runReach();
+  _booted = true;
+  showIntroIfFirstRun();
 });
 
 async function waitForServerReady() {
