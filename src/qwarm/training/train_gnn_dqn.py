@@ -101,9 +101,15 @@ def train_gnn_dqn(
                 json.dump(compute_demo_diversity(path_library), fh, indent=2)
 
         # Goal-adjacent seeding: for every node that can reach the destination in
-        # one step, add a terminal transition with reward = -step_cost + 50.
-        # This explicitly teaches Q(adj, goal) ≈ +35 so the agent never walks
-        # past an immediately-reachable destination.
+        # one step, add a terminal transition with reward = -step_cost + 100.
+        # This explicitly teaches a large positive Q(adj, goal) so the agent never
+        # walks past an immediately-reachable destination.
+        #
+        # NOTE: these transitions are NOT oracle-derived — they are read straight
+        # off graph adjacency. They are warm-only (this whole block is gated on
+        # `oracles`), so they are part of what the warm/cold contrast varies, not
+        # a shared component. Disclosed as such in the paper (Framework Overview:
+        # "a small set of goal-adjacent terminal transitions").
         for src, dst in queries:
             for node_id, neighbors in dyn_graph.graph.items():
                 if dst not in neighbors:

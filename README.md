@@ -9,7 +9,13 @@ DQfD-style expert-margin loss — is raced head-to-head against a **cold**
 (demonstration-free) agent trained on the identical graph and perturbation
 sequence. Both agents start from identical random weights under the same seed:
 *warm* and *cold* name the demonstration condition, not a parameter
-initialisation. The warm agent reaches 96% of 25×25 cells (52% cold) and 88% of
+initialisation. Alongside the demonstrations, the warm arm's offline buffer also
+receives a small set of **goal-adjacent terminal transitions** (one per node one
+hop from the destination, `reward = -step_cost + 100`); these are read off graph
+adjacency rather than produced by an oracle, and they are warm-only, so they form
+part of what the warm/cold contrast varies — see `train_gnn_dqn.py` (the block
+guarded by `if oracles and re_seed_experts_each_iteration`).
+The warm agent reaches 96% of 25×25 cells (52% cold) and 88% of
 50×50 cells (12% cold); see
 [Reproducing the paper's numbers](#reproducing-the-papers-numbers) below.
 
@@ -89,6 +95,14 @@ diverges:
 Full training/eval provenance and seeds: `scripts/run_multi_seed_warm_vs_cold.py`
 (25×25) and `scripts/run_sweep_50x50.py` (50×50), outer seeds
 `[42, 1337, 2024, 7, 314159]`.
+
+**Scope of this package.** The table above covers every quantitative claim the
+paper makes about the demonstrated system. Figures the paper attributes to the
+thesis — the within-trajectory adaptation result (6/6 at Δ∈{15,30,50}) and the
+full 100×100 quality characterisation — are *not* reproduced here; the
+within-trajectory code path exists (`realtime_perturb` in
+`src/qwarm/env/pathfinding_env.py`) but its result artefacts are not part of
+this repository.
 
 Note: `uv sync --extra dev` (the install path above) does not include
 `qiskit`/`qiskit-aer`, so it cannot reproduce the `oracle_pool="full"` warm
