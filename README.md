@@ -23,12 +23,15 @@ uv sync --extra dev
 uv run python scripts/run_demo.py
 ```
 
-Open `http://127.0.0.1:8765`. A loading screen with an elapsed-time counter
-shows while the server precomputes all 10 scenarios; the demo becomes
-interactive in roughly 20-30s after dependencies are installed (measured
-sequential startup on a CPU-only dev machine: ~17-18s of that is the
-precompute step itself). Dependency install time on top of that depends
-entirely on network speed and whether `uv`'s cache is warm.
+The server precomputes all 10 scenarios at startup and does **not** accept
+connections until that finishes, so **wait for the terminal to print
+`Ready - open http://127.0.0.1:8765` before opening the page** — the launcher
+also opens your browser automatically once the server is ready. During startup the
+terminal prints progress (`Precomputing evaluated scenarios (k/10)...`). Opening
+the URL before the `Ready` line will show a connection error until precompute
+completes. Precompute is ~17-18s on a CPU-only dev machine; dependency install time
+on top of that depends entirely on network speed and whether `uv`'s cache is warm.
+(An in-page loading overlay is shown as a fallback if you reload mid-precompute.)
 
 Works fully offline once dependencies are installed — no network calls at
 runtime.
