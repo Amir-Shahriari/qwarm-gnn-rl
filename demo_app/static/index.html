@@ -2040,24 +2040,22 @@ function sbResetAll() {
 }
 
 let _sbRacing = false;
-let _raceIdleTimer = null;
+let _raceCapTimer = null;
 
 /* Return the Race button to its idle state, enabled only if a valid pair is set.
    Centralised so the button can never get stuck disabled after a run. */
 function sbSetRaceIdle() {
   _sbRacing = false;
-  if (_raceIdleTimer) { clearTimeout(_raceIdleTimer); _raceIdleTimer = null; }
+  if (_raceCapTimer) { clearTimeout(_raceCapTimer); _raceCapTimer = null; }
   const btn = document.getElementById('btnRace');
   btn.textContent = '▶ Race';
   btn.disabled = (_sbSrc < 0 || _sbDst < 0);
 }
 
 async function runSandboxRace() {
-  if (_sbSrc < 0 || _sbDst < 0 || _sbRacing) return;   // guard blocks rapid double-fire
+  if (_sbSrc < 0 || _sbDst < 0 || _sbRacing) return;   // guard blocks re-fire while running
   stopSandboxAnim();                                    // interrupt any prior trajectory animation
   _sbRacing = true;
-  if (_raceIdleTimer) { clearTimeout(_raceIdleTimer); _raceIdleTimer = null; }
-  const startAt = performance.now();
   const btn = document.getElementById('btnRace');
   btn.disabled = true;
   btn.textContent = 'Racing…';
@@ -2086,11 +2084,10 @@ async function runSandboxRace() {
     renderSandboxResults();
     document.getElementById('sbRaceLoading').hidden = true;
     startSandboxAnim();
-    // Hold the running state for a perceptible minimum (the compute itself is
-    // sub-ms), then re-enable even while the trajectory animation keeps drawing.
-    // A fresh Race interrupts the animation via stopSandboxAnim() above.
-    const remain = Math.max(0, 600 - (performance.now() - startAt));
-    _raceIdleTimer = setTimeout(sbSetRaceIdle, remain);
+    // Race stays disabled for the WHOLE trajectory animation, so a run cannot be
+    // reset mid-flight by re-clicking. The animation is length-bounded (below),
+    // and this cap is a safety net if it ever stalls.
+    _raceCapTimer = setTimeout(sbSetRaceIdle, 10000);
   } catch (e) {
     showMsg('sbError', 'Race failed: ' + e.message);
     document.getElementById('sbRaceLoading').hidden = true;
@@ -2099,21 +2096,26 @@ async function runSandboxRace() {
 }
 
 function startSandboxAnim() {
-  if (!_sbRaceResult) return;
+  if (!_sbRaceResult) { sbSetRaceIdle(); return; }
   const maxSteps = Math.max(
     (_sbRaceResult.warm.path || []).length,
     (_sbRaceResult.cold.path || []).length
   );
+  // Bound total animation to a few seconds: 90 ms/step for short paths, faster for
+  // long ones (a cold wander can be hundreds of steps) so Race is never disabled
+  // for an unreasonable time while still finishing the trajectory.
+  const stepMs = Math.max(15, Math.min(90, Math.round(4500 / Math.max(1, maxSteps))));
   renderSandbox();
   _sbAnimTimer = setInterval(() => {
     _sbAnimStep++;
     renderSandbox();
     if (_sbAnimStep >= maxSteps) stopSandboxAnim();
-  }, 90);
+  }, stepMs);
 }
 
 function stopSandboxAnim() {
   if (_sbAnimTimer) { clearInterval(_sbAnimTimer); _sbAnimTimer = null; }
+  sbSetRaceIdle();
 }
 
 function renderSandboxResults() {
