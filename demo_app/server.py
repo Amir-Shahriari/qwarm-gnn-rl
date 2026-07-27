@@ -1,4 +1,4 @@
-"""FastAPI backend for the ICDM 2026 GNN-DQN warm-start pathfinding demo.
+"""FastAPI backend for the ICDM 2026 GNN-DQN expert-replay routing demo.
 
 Endpoints:
   GET  /                     → serve demo_app/static/index.html

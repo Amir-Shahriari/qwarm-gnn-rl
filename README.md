@@ -1,13 +1,16 @@
-# QWarm-RL — GNN-RL Warm-Starting for Dynamic Routing
+# QWarm-RL — Persistent Expert Replay for GNN-RL Routing
 
 An interactive browser demo and reproducibility package for a GraphSAGE-DQN
 routing agent that learns to navigate a perturbing dynamic graph. A
-**warm-started** agent — pre-seeded with a mixed pool of classical
+**warm** (demonstration-assisted) agent — trained with a mixed pool of classical
 (A\*/k-shortest-paths) and simulated-quantum (QAOA / noisy stochastic A\*)
-demonstrations, trained with DQfD-style expert-margin loss — is raced
-head-to-head against a **cold-started** agent trained from scratch on the
-identical graph and perturbation sequence. Warm-starting reaches 96% of
-25×25 cells (52% cold) and 88% of 50×50 cells (12% cold); see
+demonstrations held in its replay buffer throughout training, under a
+DQfD-style expert-margin loss — is raced head-to-head against a **cold**
+(demonstration-free) agent trained on the identical graph and perturbation
+sequence. Both agents start from identical random weights under the same seed:
+*warm* and *cold* name the demonstration condition, not a parameter
+initialisation. The warm agent reaches 96% of 25×25 cells (52% cold) and 88% of
+50×50 cells (12% cold); see
 [Reproducing the paper's numbers](#reproducing-the-papers-numbers) below.
 
 ![Reach mode: warm vs. cold agent racing to the same goal, with the Dijkstra-optimal reference path](screenshot.png)
@@ -47,7 +50,7 @@ demonstrations were available during training.
 
 **Explore** (top-right toggle) exposes the full controls as three separate
 selectors — graph scale (25×25 / 50×50), perturbation level, and evaluated
-scenario — plus the oracle source (full pool / classical-only / QAOA-only, on
+scenario — plus the oracle source (full pool / classical-only / quantum-sourced-only, on
 25×25) and a **Sandbox** tab for authoring arbitrary source, destination, and
 obstacle layouts. Warm, cold, and Dijkstra carry redundant encoding (solid /
 dashed / dotted lines, circle / square markers) so the comparison reads without
@@ -76,7 +79,7 @@ diverges:
 |---|---|
 | 25×25 warm 96% / cold 52%, 88%/12% at 50×50, 84% paired win-rate, mean gaps 4.42×/17.3× | `runs/sweep_phase3_final.json`, `runs/sweep_50x50/sweep_v1_50x50_{1x,4x}.json` |
 | 24/24 and 22/22 reach over structurally-solvable cells | `runs/eval_reachability_audit.json` |
-| Source-ablation reach (classical_only/quantum_only/full-pool) | `runs/demo_source_ablation_partial.json`, `runs/sweep_phase3_traced.json` — covers only the cells actually trained per arm (5/24 and 4/24 of the solvable 25×25 cells for classical_only/quantum_only respectively, all reached); this is not full 24/24 coverage (see the `check_ablation_subset_reach` docstring in `verify_demo_claims.py` for the exact caveat) |
+| Source-ablation reach (classical_only/quantum_only/full-pool) | `runs/demo_source_ablation.log` — the full 50-run log; all three arms reach 24/24 structurally-solvable 25×25 cells. `runs/demo_source_ablation_partial.json` is a 9-row checkpoint used as an independent cross-check that its strict values agree with the full-log parse (see the `check_ablation_full_reach` docstring in `verify_demo_claims.py`). Note `quantum_only` = QAOA **+** quantum-inspired stochastic, not QAOA alone |
 | Fleet throughput (138×) | `runs/fleet_1779277545_seed42/fleet_results.json` |
 | Reward-shaping control (demonstration-free λ-sweep, 5 arms) | `scripts/run_shaping_control.py`, `runs/shaping_control/{lambda_*.json,aggregate.json}` — a range claim over all five arms, not a single "best arm" number |
 
