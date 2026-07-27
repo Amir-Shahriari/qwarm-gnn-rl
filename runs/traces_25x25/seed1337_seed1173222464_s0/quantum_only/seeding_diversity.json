@@ -1,0 +1,13 @@
+{
+  "n_unique_paths": 5,
+  "mean_pairwise_jaccard_distance": 0.690050505050505,
+  "n_unique_state_actions": 20,
+  "n_transitions": 27,
+  "paths_by_source": {
+    "faithful_qaoa": 3,
+    "quantum_inspired_stochastic": 2
+  },
+  "n_qaoa_paths": 3,
+  "n_quantum_paths": 5,
+  "n_classical_paths": 0
+}

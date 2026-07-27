@@ -1,0 +1,56 @@
+{
+  "n_cells": 15,
+  "n_skipped_unreachable": 0,
+  "warm_4x_reach": 10,
+  "config": {
+    "grid": {
+      "grid_width": 100,
+      "grid_height": 100,
+      "extra_edges": 4,
+      "deactivate_prob": 0.3
+    },
+    "train": {
+      "n_iterations": 40,
+      "episodes_per_iteration": 200,
+      "grad_steps_per_episode": 4,
+      "batch_size": 64,
+      "hidden_dim": 128
+    },
+    "cold": {
+      "oracles": [],
+      "expert_ratio": 0.0,
+      "re_seed_experts_each_iteration": false
+    }
+  },
+  "note": "warm_strict budget is not recorded in the subset JSON; cold@1000 is the comparable pairing, cold@300 the strict one.",
+  "budget_300": {
+    "cold_4x_reach": 1,
+    "cold_4x_reach_rate": 0.06666666666666667,
+    "cold_4x_wilson_ci_95": [
+      0.0119,
+      0.2982
+    ],
+    "mcnemar_warm_vs_cold_p": 0.007660761135179439,
+    "contingency_2x2": {
+      "warm_reach_cold_reach": 1,
+      "warm_reach_cold_fail": 9,
+      "warm_fail_cold_reach": 0,
+      "warm_fail_cold_fail": 5
+    }
+  },
+  "budget_1000": {
+    "cold_4x_reach": 1,
+    "cold_4x_reach_rate": 0.06666666666666667,
+    "cold_4x_wilson_ci_95": [
+      0.0119,
+      0.2982
+    ],
+    "mcnemar_warm_vs_cold_p": 0.007660761135179439,
+    "contingency_2x2": {
+      "warm_reach_cold_reach": 1,
+      "warm_reach_cold_fail": 9,
+      "warm_fail_cold_reach": 0,
+      "warm_fail_cold_fail": 5
+    }
+  }
+}

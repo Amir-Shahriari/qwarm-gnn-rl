@@ -24,6 +24,14 @@ EXPECTED_SHAPING_REACH = {0.5: 18, 1.0: 12, 2.0: 16, 4.0: 14, 8.0: 15}
 REACHABILITY_AUDIT = ROOT / "runs" / "eval_reachability_audit.json"
 ABLATION_PARTIAL = ROOT / "runs" / "demo_source_ablation_partial.json"
 ABLATION_LOG = ROOT / "runs" / "demo_source_ablation.log"
+# Per-cell demonstration-diversity snapshots written at buffer-seeding time,
+# one per (cell, arm). Means are taken over the structurally-solvable cells.
+TRACES_25X25 = ROOT / "runs" / "traces_25x25"
+# 100x100 paired cold-start control at 4x budget.
+COLD_4X_RESULTS = ROOT / "runs" / "cold_4x_control_results.json"
+COLD_4X_AGGREGATE = ROOT / "runs" / "cold_4x_control_aggregate.json"
+# Episodes-to-threshold sample-efficiency curves at 25x25.
+LEARNING_CURVES = ROOT / "runs" / "learning_curves_25x25.json"
 
 # Known-unsolvable 25x25 cell (destination node deactivated by perturbation) —
 # the single expected exclusion when checking "reach over solvable cells".
@@ -308,6 +316,91 @@ def check_shaping_arm(lm, arm, expected_reach, warm_reach, results):
         results.append(f"lambda_shape={lm} shaping-control range check failed: {failed}")
 
 
+def check_demo_diversity(results):
+    """Per-cell demonstration diversity by oracle source, over solvable cells.
+
+    Reads runs/traces_25x25/<cell>/<arm>/seeding_diversity.json, written at
+    buffer-seeding time by train_gnn_dqn. The denominator is the 24
+    structurally-solvable cells, NOT all 25: averaging over 25 gives
+    33.24/4.72, which does not match the published 33.5/4.8. Excluding the
+    single known-unsolvable cell reproduces every published figure, so the
+    exclusion is asserted here rather than left implicit.
+    """
+    by_arm = {}
+    for path in sorted(TRACES_25X25.glob("*/*/seeding_diversity.json")):
+        arm = path.parent.name
+        cell = path.parent.parent.name
+        if KNOWN_UNSOLVABLE_25X25 in cell:
+            continue
+        by_arm.setdefault(arm, []).append(load_json(path))
+
+    # (arm, metric, expected, rel_tol) — the published diversity table.
+    expected = [
+        ("classical_only", "n_unique_paths", 33.5, 0.02),
+        ("classical_only", "n_unique_state_actions", 105.9, 0.02),
+        ("quantum_only", "n_unique_paths", 4.8, 0.03),
+        ("quantum_only", "n_unique_state_actions", 20.8, 0.03),
+    ]
+    for arm, metric, exp, tol in expected:
+        rows = by_arm.get(arm, [])
+        if len(rows) != 24:
+            results.append(
+                f"diversity {arm}: expected 24 solvable-cell snapshots, got {len(rows)}"
+            )
+            print(f"  [FAIL] diversity {arm} {metric}: {len(rows)} cells, expected 24")
+            continue
+        got = sum(r[metric] for r in rows) / len(rows)
+        check_ratio(f"diversity {arm} {metric} (24 solvable cells)", got, exp, tol, results)
+
+
+def check_cold_4x_control(results):
+    """100x100 paired cold-start control at 4x budget.
+
+    Paper claim: warm 10/15 vs cold 1/15, all nine discordant pairs favouring
+    warm, exact binomial McNemar p = 2 * 0.5^9 = 0.0039. cold_strict is the
+    300-step budget and cold_strict_1000 the 1000-step budget; the claim holds
+    at both, and both are checked so a budget-dependent result cannot slip by.
+    """
+    rows = load_json(COLD_4X_RESULTS)
+    agg = load_json(COLD_4X_AGGREGATE)
+    warm_reach = agg["warm_4x_reach"]
+    cold_300 = sum(1 for r in rows if r.get("cold_strict"))
+    cold_1000 = sum(1 for r in rows if r.get("cold_strict_1000"))
+
+    check_count("cold-4x control: warm reach", warm_reach, 10, 0, len(rows), results)
+    check_count("cold-4x control: cold reach @300", cold_300, 1, 0, len(rows), results)
+    check_count("cold-4x control: cold reach @1000", cold_1000, 1, 0, len(rows), results)
+
+    discordant = warm_reach - cold_1000
+    p_exact = 2 * (0.5 ** discordant)
+    passed = discordant == 9 and p_exact <= 0.004
+    mark = "PASS" if passed else "FAIL"
+    print(f"  [{mark}] cold-4x control: {discordant} discordant pairs, "
+          f"exact binomial p={p_exact:.4f}  expected=9, p<=0.004")
+    if not passed:
+        results.append(
+            f"cold-4x control: got {discordant} discordant pairs (p={p_exact:.4f}), expected 9 (p<=0.004)"
+        )
+
+
+def check_sample_efficiency(results):
+    """Episodes-to-threshold at 25x25 (rolling window=25, 500-episode budget).
+
+    Paper claim: warm crosses a sustained 50% goal-reach threshold on 17/24
+    solvable cells at a median of 351 episodes, against cold's 1/24.
+    """
+    arms = load_json(LEARNING_CURVES)["sample_efficiency"]["arms"]
+    warm = arms["warm"]["0.5"]
+    cold = arms["cold"]["0.5"]
+
+    check_count("sample-efficiency: warm crossings @50%", warm["n_reached"], 17, 0,
+                warm["n_cells"], results)
+    check_count("sample-efficiency: cold crossings @50%", cold["n_reached"], 1, 0,
+                cold["n_cells"], results)
+    check_ratio("sample-efficiency: warm median episodes", warm["median"], 351.0, 0.01,
+                results)
+
+
 def main():
     failures = []
 
@@ -422,6 +515,18 @@ def main():
     for lm_str, arm in sorted(shaping["arms"].items(), key=lambda kv: float(kv[0])):
         lm = float(lm_str)
         check_shaping_arm(lm, arm, EXPECTED_SHAPING_REACH[lm], warm_ref, failures)
+
+    # ── Demonstration diversity by oracle source ───────────────────────────
+    print("\nDemonstration diversity by source (25x25, 24 solvable cells):")
+    check_demo_diversity(failures)
+
+    # ── 100x100 paired cold-start control at 4x budget ─────────────────────
+    print("\n100x100 cold-start control at 4x budget:")
+    check_cold_4x_control(failures)
+
+    # ── Sample efficiency: episodes to goal-reach threshold ────────────────
+    print("\nSample efficiency (25x25, episodes to sustained 50% goal-reach):")
+    check_sample_efficiency(failures)
 
     # ── Summary ────────────────────────────────────────────────────────────
     print("\n===")

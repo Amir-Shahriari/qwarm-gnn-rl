@@ -1,0 +1,12 @@
+{
+  "n_unique_paths": 24,
+  "mean_pairwise_jaccard_distance": 0.7504339945836108,
+  "n_unique_state_actions": 84,
+  "n_transitions": 157,
+  "paths_by_source": {
+    "KShortestPaths": 24
+  },
+  "n_qaoa_paths": 0,
+  "n_quantum_paths": 0,
+  "n_classical_paths": 24
+}

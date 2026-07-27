@@ -82,6 +82,9 @@ diverges:
 | Source-ablation reach (classical_only/quantum_only/full-pool) | `runs/demo_source_ablation.log` — the full 50-run log; all three arms reach 24/24 structurally-solvable 25×25 cells. `runs/demo_source_ablation_partial.json` is a 9-row checkpoint used as an independent cross-check that its strict values agree with the full-log parse (see the `check_ablation_full_reach` docstring in `verify_demo_claims.py`). Note `quantum_only` = QAOA **+** quantum-inspired stochastic, not QAOA alone |
 | Fleet throughput (138×) | `runs/fleet_1779277545_seed42/fleet_results.json` |
 | Reward-shaping control (demonstration-free λ-sweep, 5 arms) | `scripts/run_shaping_control.py`, `runs/shaping_control/{lambda_*.json,aggregate.json}` — a range claim over all five arms, not a single "best arm" number |
+| Demonstration diversity (33.5 vs 4.8 unique paths/cell) | `runs/traces_25x25/*/{classical_only,quantum_only}/seeding_diversity.json` — means over the **24 structurally-solvable** cells; averaging over all 25 gives 33.2/4.7 and will not match the paper |
+| 100×100 cold-start control at 4× budget (warm 10/15, cold 1/15, McNemar p=0.004) | `runs/cold_4x_control_{results,aggregate}.json`, `runs/sweep_v1_on_100x100.json` |
+| Sample efficiency (warm 17/24 crossings, median 351 episodes; cold 1/24) | `runs/learning_curves_25x25.json` — first episode at which a rolling 25-episode window sustains 50% goal-reach, 500-episode budget |
 
 Full training/eval provenance and seeds: `scripts/run_multi_seed_warm_vs_cold.py`
 (25×25) and `scripts/run_sweep_50x50.py` (50×50), outer seeds
