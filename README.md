@@ -36,6 +36,23 @@ on top of that depends entirely on network speed and whether `uv`'s cache is war
 Works fully offline once dependencies are installed — no network calls at
 runtime.
 
+## Using the demo
+
+The demo opens in a **Guided tour**: the warm and cold agents race the same
+perturbed graph side by side (alongside the Dijkstra optimum), a first-run card
+explains the setup, and "Try another scenario" steps through curated instances. A
+persistent bar keeps the key point on screen — both agents run on the *same* graph
+under the *same* perturbation, and the only difference is whether expert
+demonstrations were available during training.
+
+**Explore** (top-right toggle) exposes the full controls as three separate
+selectors — graph scale (25×25 / 50×50), perturbation level, and evaluated
+scenario — plus the oracle source (full pool / classical-only / QAOA-only, on
+25×25) and a **Sandbox** tab for authoring arbitrary source, destination, and
+obstacle layouts. Warm, cold, and Dijkstra carry redundant encoding (solid /
+dashed / dotted lines, circle / square markers) so the comparison reads without
+relying on colour.
+
 **Hardware:** CPU-only, no GPU required. ~4GB RAM, ~1GB disk (including
 committed checkpoints). An NVIDIA GPU is used automatically if present, but
 never required. On **Linux** specifically, the plain PyPI `torch` wheel
