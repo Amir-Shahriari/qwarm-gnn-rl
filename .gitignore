@@ -13,3 +13,7 @@ dist/
 .vscode/
 .idea/
 .claude/
+
+# Paper builds and reference literature kept alongside the repo — not part of
+# the released artefact.
+*.pdf

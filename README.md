@@ -19,7 +19,13 @@ The warm agent reaches 96% of 25×25 cells (52% cold) and 88% of
 50×50 cells (12% cold); see
 [Reproducing the paper's numbers](#reproducing-the-papers-numbers) below.
 
-![Reach mode: warm vs. cold agent racing to the same goal, with the Dijkstra-optimal reference path](screenshot.png)
+![Reach mode at 25×25: the warm agent reaches the goal in 13 steps, the cold agent exhausts its 500-step budget without arriving, and the Dijkstra reference path is shown alongside. Header panels report reach, warm optimality gap, and per-decision inference latency.](demo_ui.png)
+
+*Reach mode at 25×25 — warm, cold, and Dijkstra on the same perturbed graph.
+This instance is representative of the pattern the paper reports: the warm agent
+arrives (13 steps, cost 295.2) while the cold agent wanders until its step budget
+expires. Route quality is the standing limitation — the warm route costs 4.42×
+the Dijkstra optimum (66.7) even though it reaches.*
 
 Paper under review at IEEE ICDM 2026 (demo track).
 
