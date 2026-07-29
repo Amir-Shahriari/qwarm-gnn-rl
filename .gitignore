@@ -17,3 +17,6 @@ dist/
 # Paper builds and reference literature kept alongside the repo — not part of
 # the released artefact.
 *.pdf
+
+# Generated knowledge-graph output — rebuilt on demand, not part of the repo.
+graphify-out/

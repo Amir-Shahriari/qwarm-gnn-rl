@@ -680,10 +680,10 @@
         <div class="field grow">
           <label for="perturbSelect">Perturbation</label>
           <select id="perturbSelect" onchange="onPerturbChange()"
-                  title="Training level uses the exact graph the paper's numbers are reported on. The OOD options rebuild the graph from scratch at a different edge-fail rate — a fresh out-of-distribution realisation, not a mild variation on training.">
+                  title="Training level uses the exact graph the paper's numbers are reported on. The OOD options keep the same road network, but every edge weight, node penalty, and failure mask is redrawn at a different failure rate — one random realisation, not a mild variation on training.">
             <option value="1.0" selected>Training level — paper numbers apply</option>
-            <option value="0.5">OOD stress test — off-training, 0.5× edge-fail (not paper conditions)</option>
-            <option value="2.0">OOD stress test — off-training, 2× edge-fail (both agents may fail; not paper conditions)</option>
+            <option value="0.5">OOD stress test — off-training, 0.5× failure rate (single draw; not paper conditions)</option>
+            <option value="2.0">OOD stress test — off-training, 2× failure rate (single draw; both agents may fail; not paper conditions)</option>
           </select>
         </div>
 
@@ -728,10 +728,14 @@
     </section>
 
     <div id="reachOodNote" class="msg warn">
-      <strong>Off-training realisation.</strong> Same trained agents, but the graph's edge/node state has been
-      redrawn from scratch at a different failure rate — not a small increase or decrease over training.
-      Both agents are substantially out-of-distribution here and either may fail. The paper's reach and
-      ratio numbers apply only at <strong>Training level</strong>.
+      <strong>Off-training realisation.</strong> Same trained agents and the same road network, but every
+      edge weight, node penalty, and failure mask has been redrawn at a different failure rate — not a small
+      increase or decrease over training. Both agents are substantially out-of-distribution here and either
+      may fail. The paper's reach and ratio numbers apply only at <strong>Training level</strong>.
+      <br>
+      <strong>This is one random realisation at this failure rate — outcomes vary between draws.</strong>
+      A single result here is not evidence of an effect, and reach is not necessarily monotonic in the
+      failure rate: a given instance can fail at 0.5× and succeed at 2× purely by the luck of the draw.
     </div>
 
     <div class="msg error" id="reachError"></div>
@@ -1689,8 +1693,10 @@ function renderMetrics() {
   setBadge('coldBadge', c, uns);
 
   // ── winner highlight (never fabricated: derived from the real result) ──
-  const warmReachWin = w.reached && !c.reached;
-  const coldReachWin = c.reached && !w.reached;
+  // A reach win is undefined when no path exists, so it is gated on !uns
+  // explicitly rather than left to fall out of both reached flags being false.
+  const warmReachWin = !uns && w.reached && !c.reached;
+  const coldReachWin = !uns && c.reached && !w.reached;
   const bothReached  = w.reached && c.reached;
   const warmCheaper  = bothReached && w.cost != null && c.cost != null && w.cost < c.cost;
   const coldCheaper  = bothReached && w.cost != null && c.cost != null && c.cost < w.cost;

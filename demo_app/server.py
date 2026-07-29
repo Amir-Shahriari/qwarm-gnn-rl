@@ -41,6 +41,11 @@ _DEMO_AGENTS_DIR = _ROOT / "demo_agents"
 _STATIC_DIR = pathlib.Path(__file__).parent / "static"
 _TRACES_ROOT = _ROOT / "runs" / "traces_25x25"
 _ORACLE_SEED = 42
+# DynamicGraph's own default. Manifest grid blocks may omit node_deactivate_prob
+# (the 25x25 block does), so both the rebuild and the perturbation control have
+# to fall back to the same value — otherwise the perturbation multiplier scales
+# node failure at one scale and not the other.
+_DEFAULT_NODE_DEACTIVATE_PROB = 0.05
 
 # ---------------------------------------------------------------------------
 # In-memory cache populated at startup
@@ -133,7 +138,9 @@ def _rebuild_graph(scale_entry: dict, grid_seed: int) -> DynamicGraph:
         grid_height=grid["grid_height"],
         extra_edges=grid.get("extra_edges", 2),
         deactivate_prob=grid.get("deactivate_prob", 0.15),
-        node_deactivate_prob=grid.get("node_deactivate_prob", 0.05),
+        node_deactivate_prob=grid.get(
+            "node_deactivate_prob", _DEFAULT_NODE_DEACTIVATE_PROB,
+        ),
         seed=grid_seed,
     )
     for i in range(1, n_iters + 1):
@@ -798,10 +805,16 @@ async def post_reach(req: ReachRequest):
     base_deact = scale_entry["grid"].get("deactivate_prob", 0.15)
     new_deact = min(0.95, base_deact * req.perturb_multiplier)
     modified_grid = {**scale_entry["grid"], "deactivate_prob": new_deact}
-    if "node_deactivate_prob" in modified_grid:
-        modified_grid["node_deactivate_prob"] = min(
-            0.95, modified_grid["node_deactivate_prob"] * req.perturb_multiplier,
-        )
+    # Scale node failure unconditionally, falling back to the same default
+    # _rebuild_graph uses. Keying this off `"node_deactivate_prob" in grid` scaled
+    # node failure at 50x50 (which sets the key) but not at 25x25 (which omits it),
+    # so "2x perturbation" meant edges+nodes at one scale and edges only at the other.
+    base_node_deact = modified_grid.get(
+        "node_deactivate_prob", _DEFAULT_NODE_DEACTIVATE_PROB,
+    )
+    modified_grid["node_deactivate_prob"] = min(
+        0.95, base_node_deact * req.perturb_multiplier,
+    )
     modified_entry = {**scale_entry, "grid": modified_grid}
 
     g = _rebuild_graph(modified_entry, info["grid_seed"])
