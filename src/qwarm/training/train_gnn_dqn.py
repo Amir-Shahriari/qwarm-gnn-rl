@@ -95,7 +95,7 @@ def train_gnn_dqn(
         seed_buffer_from_path_library(dyn_graph, buffer, path_library, iteration=0)
 
         # Demonstration-diversity snapshot of the seeded library (file write
-        # only — consumes no RNG, so traced runs stay bit-compatible).
+        # only — consumes no RNG, so tracing does not shift the RNG stream).
         if trace_dir is not None:
             with open(pathlib.Path(trace_dir) / "seeding_diversity.json", "w") as fh:
                 json.dump(compute_demo_diversity(path_library), fh, indent=2)
@@ -187,7 +187,10 @@ def train_gnn_dqn(
                     next_state, reward, done = env.step(action)
                     if done:
                         # Classification only reads env state — consumes no RNG,
-                        # so traced runs stay bit-compatible with untraced ones.
+                        # so it does not shift the RNG stream. That does not
+                        # make traced and untraced runs bit-identical: nothing
+                        # here is, see SANITY_BASELINE_DIFFS in
+                        # scripts/run_demo_source_ablation.py.
                         # Precedence: goal > step_cap > invalid (agent stayed
                         # put) > other (node deactivated under the agent).
                         if next_state == dst:

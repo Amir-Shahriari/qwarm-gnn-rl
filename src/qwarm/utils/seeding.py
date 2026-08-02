@@ -11,7 +11,11 @@ def set_global_seed(seed: int) -> np.random.Generator:
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
-        # Deterministic CUDA ops so training converges identically across runs.
+        # Best-effort CUDA determinism — NOT a bit-reproducibility guarantee.
+        # warn_only=True means ops with no deterministic implementation still
+        # run, they only warn. Empirically two same-seed 25x25 sweeps
+        # (runs/sweep_phase3_{final,traced}.json) diverge on 14/25 warm cells
+        # by cost and 7/25 cold cells by goal-reach; don't claim otherwise.
         # WDDM note: CUDA graphs (deferred) would cut batch_infer overhead to
         # ~10-30 ms on Linux/WSL2; on Windows WDDM the driver adds ~15 µs per
         # kernel launch regardless — see GPU2 gate comment in test_batch_infer.py.
