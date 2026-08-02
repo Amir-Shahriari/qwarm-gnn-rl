@@ -163,24 +163,24 @@ was in effect when the artefacts were produced. That caveat applies to every
 **[C]** cell below; it bears most on node deactivation at 25×25, where the value
 comes from a class default the configuration never passes.
 
-| Parameter | 25×25 | 50×50 (1×) | 100×100 |
-|---|---|---|---|
-| Nodes | 625 **[C]** | 2,500 **[C]** | 10,000 **[A]** |
-| Hidden dimension | 64 **[C]** | 128 **[C]** | 128 **[A]** |
-| Expert ratio ρ (warm) | 0.40 **[C]** | 0.30 **[C]** | **[?]** — cold arm records 0.0 **[A]** |
-| Iterations N_it | 5 **[C]** | 10; 4× tier = 40 **[C]** | 40 at 4×, so 10 at 1× **[A/D]** |
-| Episodes per iteration N_ep | 100 **[C]** | 200 **[C]** | 200 **[A]** |
-| Gradient steps per episode | 4 **[C]** | 4 **[C]** | 4 **[A]** |
-| Batch size | 64 **[C]** | 64 **[C]** | 64 **[A]** |
-| Extra edges E_extra | 2 **[C]** | 3 **[C]** | 4 **[A]** |
-| Edge deactivation p_deact | 0.15 **[C]** | 0.22 **[C]** | 0.30 **[A]** |
-| Node deactivation | 0.05 **[C]** (class default, not passed) | 0.05 **[C]** (passed explicitly) | **[?]** — not in the recorded `grid` block |
-| Pre-seed states N_ps | 5 **[C]** | 3 **[C]** | **[?]** — cold arm records 0 **[A]** |
-| Pre-seed k-paths K | 10 **[C]** | 3 **[C]** | **[?]** — cold arm records 0 **[A]** |
-| ε schedule | 0.40 → 0.05 over 5 iterations **[C/D]** | 0.40 → 0.05 over 10 (4×: 40) **[C/D]** | **[?]** — see note below |
-| T_max, training | 400 **[C]** | 400 **[C]** | **[?]** — see note below |
-| T_max, evaluation | 300 **[C]** | 300 and 1000, dual-budget **[C]** | 300 and 1000 **[A]** |
-| Effective oracle set | A\* + stochastic + QAOA **[D]** | A\* + stochastic **[D]** | **[?]** — pool unknown; QAOA excluded by size **[D]** |
+| Parameter | 25×25 | 50×50 (1×) |
+|---|---|---|
+| Nodes | 625 **[C]** | 2,500 **[C]** |
+| Hidden dimension | 64 **[C]** | 128 **[C]** |
+| Expert ratio ρ (warm) | 0.40 **[C]** | 0.30 **[C]** |
+| Iterations N_it | 5 **[C]** | 10; 4× tier = 40 **[C]** |
+| Episodes per iteration N_ep | 100 **[C]** | 200 **[C]** |
+| Gradient steps per episode | 4 **[C]** | 4 **[C]** |
+| Batch size | 64 **[C]** | 64 **[C]** |
+| Extra edges E_extra | 2 **[C]** | 3 **[C]** |
+| Edge deactivation p_deact | 0.15 **[C]** | 0.22 **[C]** |
+| Node deactivation | 0.05 **[C]** (class default, not passed) | 0.05 **[C]** (passed explicitly) |
+| Pre-seed states N_ps | 5 **[C]** | 3 **[C]** |
+| Pre-seed k-paths K | 10 **[C]** | 3 **[C]** |
+| ε schedule | 0.40 → 0.05 over 5 iterations **[C/D]** | 0.40 → 0.05 over 10 (4×: 40) **[C/D]** |
+| T_max, training | 400 **[C]** | 400 **[C]** |
+| T_max, evaluation | 300 **[C]** | 300 and 1000, dual-budget **[C]** |
+| Effective oracle set | A\* + stochastic + QAOA **[D]** | A\* + stochastic **[D]** |
 
 Batch size and gradient steps per episode are identical across all three, as are
 γ (0.95), the learning rate (1e-4) and — between 25×25 and 50×50 — training
